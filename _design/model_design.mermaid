@@ -1,0 +1,81 @@
+erDiagram    
+    User {
+        uuid id PK
+        enum role
+        encrypted password
+        datetime created_at
+        datetime updated_at
+    }
+
+    Member {
+        uuid id PK
+        uuid team_uuid FK
+        enum role
+        string name
+        text description
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Team {
+        uuid id PK
+        string name
+        string logo
+        text description
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Position {
+        uuid id PK
+        uuid race_uuid FK
+        uuid driver_uuid FK
+        integer position
+        integer points
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Circuit {
+        uuid id PK
+        string name
+        string location
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Race {
+        uuid id PK
+        uuid circuit_uuid FK
+        string last_name
+        text description
+        datetime start_at
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Review {
+        uuid id PK
+        uuid user_uuid FK
+        integer rating
+        text description
+        uuid record_uuid
+        string record_type
+        datetime created_at
+        datetime updated_at
+    }
+    
+    Like {
+        uuid id PK
+        uuid user_uuid FK
+        uuid record_uuid
+        string record_type
+        datetime created_at
+    }
+    
+    Member ||--|| Team : "belongs to"
+    Member ||--o{ Position : "drives in"
+    Race ||--o{ Position : "has"
+    Circuit ||--o{ Race : "hosts"
+    User ||--o{ Review : "writes"
+    User ||--o{ Like : "gives"
