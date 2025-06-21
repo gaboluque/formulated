@@ -1,91 +1,78 @@
 import './App.css'
 import { useLoaderData, Link } from 'react-router';
-import { Card, Button, UserMenu } from './components';
-import { useAuth } from './lib/contexts/AuthContext';
-import type { Team } from './lib/types/team';
-import { routes } from './routing/router';
+import { TeamCard } from './components/teams/TeamCard'
+import type { Team } from './lib/types/teams';
+
+interface LoaderData {
+  teams: Team[]
+}
 
 function App() {
-  const data = useLoaderData() as { teams: Team[] };
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { teams } = useLoaderData() as LoaderData;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link to={routes.home.path} className="text-xl font-bold text-gray-900 dark:text-white">
-                🏁 Formulated
-              </Link>
-              <nav className="hidden sm:flex space-x-6">
-                <Link to={routes.home.path} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                  Teams
-                </Link>
-              </nav>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {isLoading ? (
-                <div className="animate-pulse">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                </div>
-              ) : isAuthenticated && user ? (
-                <UserMenu />
-              ) : (
-                <div className="flex items-center space-x-3">
-                  <Link to={routes.login.path}>
-                    <Button variant="outline" size="sm">Sign In</Button>
-                  </Link>
-                  <Link to={routes.register.path}>
-                    <Button variant="primary" size="sm">Sign Up</Button>
-                  </Link>
-                </div>
-              )}
-            </div>
+    <>
+      {/* Hero Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          Welcome to Formulated
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300">
+          Your ultimate destination for Formula 1 team information, reviews, and social interaction.
+        </p>
+      </div>
+
+      {/* Featured Teams */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Featured Teams
+          </h2>
+          <Link
+            to="/teams"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            View All Teams
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {teams.slice(0, 6).map((team) => (
+            <TeamCard key={team.id} team={team} />
+          ))}
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+          Features
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <div className="text-2xl mb-2">👥</div>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2">Team Profiles</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Explore detailed information about F1 teams and their members
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl mb-2">❤️</div>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2">Like & Follow</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Show support for your favorite teams with likes
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl mb-2">⭐</div>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2">Reviews</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Share your thoughts and read what other fans are saying
+            </p>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto p-6">
-        <Card title="Welcome to Formulated" className="mb-6">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {isAuthenticated && user ? (
-              <>Welcome back, <strong>{user.username}</strong>! Explore F1 teams and races.</>
-            ) : (
-              <>Welcome to Formulated! Sign in to track your favorite F1 teams and races.</>
-            )}
-          </p>
-          {!isAuthenticated && (
-            <div className="flex gap-4 flex-wrap">
-              <Link to={routes.login.path}>
-                <Button variant="primary">Get Started</Button>
-              </Link>
-              <Link to={routes.designSystem.path}>
-                <Button variant="outline">View Components</Button>
-              </Link>
-            </div>
-          )}
-        </Card>
-
-        <Card title="Teams" className="mb-6">
-          <div className="grid gap-2">
-            {data.teams.map((team: Team) => (
-              <div key={team.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <h3 className="font-medium">{team.name}</h3>
-                {team.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {team.description}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }
 

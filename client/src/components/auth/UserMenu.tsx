@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '../Button';
 import { useAuth } from '../../lib/contexts/AuthContext';
+import { routes } from '../../routing/router';
+import { Link } from 'react-router';
 
 export interface UserMenuProps {
   className?: string;
@@ -19,7 +21,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
     }
   };
 
-  if (!user) return null;
+  if (!user) return <Link to={routes.login.path} className="text-sm font-medium text-gray-700 dark:text-gray-300">Login</Link>;
 
   return (
     <div className={`relative ${className}`}>
