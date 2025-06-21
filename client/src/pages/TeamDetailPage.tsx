@@ -1,4 +1,4 @@
-import { useLoaderData } from 'react-router';
+import { Link, useLoaderData } from 'react-router';
 import { Card } from '../components/Card';
 import { LikeButton } from '../components/teams/LikeButton';
 import { ReviewsList } from '../components/teams/ReviewsList';
@@ -86,7 +86,7 @@ export const TeamDetailPage = () => {
                             <div className="space-y-3">
                                 {team.members.map((member) => (
                                     <div key={member.id} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 pb-3 last:pb-0">
-                                        <div className="flex justify-between items-start">
+                                        <Link to={`/members/${member.id}`} className="flex justify-between items-start">
                                             <div>
                                                 <h4 className="font-medium text-gray-900 dark:text-white">
                                                     {member.name}
@@ -95,12 +95,7 @@ export const TeamDetailPage = () => {
                                                     {member.role}
                                                 </span>
                                             </div>
-                                        </div>
-                                        {member.description && (
-                                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                                                {member.description}
-                                            </p>
-                                        )}
+                                        </Link>
                                     </div>
                                 ))}
                             </div>

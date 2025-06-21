@@ -1,4 +1,6 @@
 export { LoginPage } from './LoginPage';
 export { RegisterPage } from './RegisterPage';
 export { TeamsListPage } from './TeamsListPage';
-export { TeamDetailPage } from './TeamDetailPage'; 
+export { TeamDetailPage } from './TeamDetailPage';
+export { MembersListPage } from './MembersListPage';
+export { MemberDetailPage } from './MemberDetailPage'; 

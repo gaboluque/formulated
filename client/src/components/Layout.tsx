@@ -27,6 +27,12 @@ export const Layout = () => {
                                     >
                                         Teams
                                     </Link>
+                                    <Link
+                                        to="/members"
+                                        className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                                    >
+                                        Members
+                                    </Link>
                                 </div>
                             </div>
                             <div className="flex items-center">

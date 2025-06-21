@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../Button';
 import { Card } from '../Card';
-import { ReviewForm } from './ReviewForm';
-import { teamsApi } from '../../lib/api/teams';
+import { MemberReviewForm } from './MemberReviewForm';
+import { membersApi } from '../../lib/api/members';
 import { useAuth } from '../../lib/contexts/AuthContext';
 import type { Review, ReviewFormData } from '../../lib/types/interactions';
 
-export interface ReviewsListProps {
-    teamId: string;
+export interface MemberReviewsListProps {
+    memberId: string;
 }
 
-export const ReviewsList = ({ teamId }: ReviewsListProps) => {
+export const MemberReviewsList = ({ memberId }: MemberReviewsListProps) => {
     const { user } = useAuth();
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,12 +23,12 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
 
     useEffect(() => {
         loadReviews();
-    }, [teamId]);
+    }, [memberId]);
 
     const loadReviews = async () => {
         try {
             setLoading(true);
-            const reviewsData = await teamsApi.getReviews(teamId);
+            const reviewsData = await membersApi.getReviews(memberId);
             setReviews(reviewsData);
         } catch (err) {
             console.error('Error loading reviews:', err);
@@ -44,9 +44,9 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
         try {
             setSubmitting(true);
             if (editingReview) {
-                await teamsApi.updateReview(teamId, data);
+                await membersApi.updateReview(memberId, data);
             } else {
-                await teamsApi.createReview(teamId, data);
+                await membersApi.createReview(memberId, data);
             }
             await loadReviews();
             setShowForm(false);
@@ -67,7 +67,7 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
         }
 
         try {
-            await teamsApi.deleteReview(teamId);
+            await membersApi.deleteReview(memberId);
             await loadReviews();
         } catch (err) {
             console.error('Error deleting review:', err);
@@ -87,7 +87,7 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
                     <span
                         key={star}
                         className={`text-lg ${
-                            star <= rating ? 'text-yellow-400' : 'opacity-0'
+                            star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
                         }`}
                     >
                         ⭐
@@ -145,7 +145,7 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
                             Cancel
                         </Button>
                     </div>
-                    <ReviewForm
+                    <MemberReviewForm
                         onSubmit={handleSubmitReview}
                         initialData={editingReview || undefined}
                         isEditing={!!editingReview}
@@ -158,7 +158,7 @@ export const ReviewsList = ({ teamId }: ReviewsListProps) => {
                 {reviews.length === 0 ? (
                     <Card className="p-6 text-center">
                         <p className="text-gray-500 dark:text-gray-400">
-                            No reviews yet. Be the first to review this team!
+                            No reviews yet. Be the first to review this member!
                         </p>
                     </Card>
                 ) : (

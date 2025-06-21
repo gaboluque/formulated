@@ -2,16 +2,16 @@ import { useState } from 'react';
 import { Button } from '../Button';
 import type { ReviewFormData, Review } from '../../lib/types/interactions';
 
-export interface ReviewFormProps {
+export interface MemberReviewFormProps {
     onSubmit: (data: ReviewFormData) => Promise<void>;
     initialData?: Review;
     isEditing?: boolean;
     loading?: boolean;
 }
 
-export const ReviewForm = ({ onSubmit, initialData, isEditing = false, loading = false }: ReviewFormProps) => {
+export const MemberReviewForm = ({ onSubmit, initialData, isEditing = false, loading = false }: MemberReviewFormProps) => {
     const [formData, setFormData] = useState<ReviewFormData>({
-        rating: initialData?.rating || 1,
+        rating: initialData?.rating || 5,
         description: initialData?.description || '',
     });
     const [errors, setErrors] = useState<Partial<ReviewFormData>>({});
@@ -48,7 +48,6 @@ export const ReviewForm = ({ onSubmit, initialData, isEditing = false, loading =
     };
 
     const handleRatingChange = (rating: number) => {
-        console.log('rating', rating);
         setFormData(prev => ({ ...prev, rating }));
         if (errors.rating) {
             setErrors(prev => ({ ...prev, rating: undefined }));
@@ -70,7 +69,7 @@ export const ReviewForm = ({ onSubmit, initialData, isEditing = false, loading =
                             className={`text-2xl transition-colors ${
                                 star <= formData.rating
                                     ? 'text-yellow-400 hover:text-yellow-500'
-                                    : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500 opacity-30'
+                                    : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500'
                             }`}
                         >
                             ⭐
@@ -97,7 +96,7 @@ export const ReviewForm = ({ onSubmit, initialData, isEditing = false, loading =
                             setErrors(prev => ({ ...prev, description: undefined }));
                         }
                     }}
-                    placeholder="Share your thoughts about this team..."
+                    placeholder="Share your thoughts about this member's performance, skills, or contribution..."
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
