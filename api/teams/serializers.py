@@ -1,12 +1,16 @@
 from rest_framework import serializers
 from teams.models import Team, Member
 
-class TeamSerializer(serializers.ModelSerializer):
+class TeamSerializer(serializers.HyperlinkedModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name='team-detail')
+    
     class Meta:
         model = Team
-        fields = '__all__'
+        fields = ['url', 'id', 'name', 'description', 'status', 'created_at', 'updated_at']
 
-class MemberSerializer(serializers.ModelSerializer):
+class MemberSerializer(serializers.HyperlinkedModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name='member-detail')
+    
     class Meta:
         model = Member
-        fields = '__all__'
+        fields = ['url', 'id', 'name', 'role', 'description', 'team', 'created_at', 'updated_at']
