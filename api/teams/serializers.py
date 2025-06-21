@@ -10,7 +10,8 @@ class TeamSerializer(serializers.HyperlinkedModelSerializer):
 
 class MemberSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='member-detail')
+    team_url = serializers.HyperlinkedRelatedField(view_name='team-detail', source='team', read_only=True)
     
     class Meta:
         model = Member
-        fields = ['url', 'id', 'name', 'role', 'description', 'team', 'created_at', 'updated_at']
+        fields = ['url', 'id', 'name', 'role', 'description', 'team', 'team_url', 'created_at', 'updated_at']
