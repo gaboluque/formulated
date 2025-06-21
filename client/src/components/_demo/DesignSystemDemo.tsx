@@ -1,5 +1,160 @@
 import React, { useState } from 'react';
-import { Button, Card } from './index';
+import { Button, Card, Form } from '../index';
+import type { FormConfig, FormFieldValue } from '../../lib/types/form';
+
+// Contact Form Demo Component
+const ContactFormDemo: React.FC = () => {
+  const [submitted, setSubmitted] = useState(false);
+
+  const contactFormConfig: FormConfig = {
+    fields: [
+      {
+        name: 'name',
+        type: 'text',
+        label: 'Name',
+        placeholder: 'Your full name',
+        validation: { required: true, minLength: 2 }
+      },
+      {
+        name: 'email',
+        type: 'email',
+        label: 'Email',
+        placeholder: 'your@email.com',
+        validation: { required: true, email: true }
+      },
+      {
+        name: 'message',
+        type: 'textarea',
+        label: 'Message',
+        placeholder: 'How can we help you?',
+        validation: { required: true, minLength: 10, maxLength: 500 }
+      }
+    ],
+    submitText: 'Send Message'
+  };
+
+  const handleSubmit = async (data: Record<string, FormFieldValue>) => {
+    console.log('Contact form submitted:', data);
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-4">
+        <div className="text-green-600 mb-2">✓ Message sent successfully!</div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">We'll get back to you soon.</p>
+      </div>
+    );
+  }
+
+  return <Form config={contactFormConfig} onSubmit={handleSubmit} />;
+};
+
+// Registration Form Demo Component
+const RegistrationFormDemo: React.FC = () => {
+  const [submitted, setSubmitted] = useState(false);
+
+  const registrationFormConfig: FormConfig = {
+    fields: [
+      {
+        name: 'username',
+        type: 'text',
+        label: 'Username',
+        placeholder: 'Choose a username',
+        validation: { required: true, minLength: 3, maxLength: 20 }
+      },
+      {
+        name: 'email',
+        type: 'email',
+        label: 'Email',
+        placeholder: 'your@email.com',
+        validation: { required: true, email: true }
+      },
+      {
+        name: 'age',
+        type: 'number',
+        label: 'Age',
+        placeholder: 'Enter your age',
+        validation: { required: true, min: 13, max: 120 }
+      },
+      {
+        name: 'role',
+        type: 'select',
+        label: 'Role',
+        placeholder: 'Select your role',
+        validation: { required: true },
+        options: [
+          { value: 'developer', label: 'Developer' },
+          { value: 'designer', label: 'Designer' },
+          { value: 'manager', label: 'Manager' },
+          { value: 'other', label: 'Other' }
+        ]
+      }
+    ],
+    submitText: 'Create Account'
+  };
+
+  const handleSubmit = async (data: Record<string, FormFieldValue>) => {
+    console.log('Registration form submitted:', data);
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-4">
+        <div className="text-green-600 mb-2">🎉 Account created!</div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Welcome to the platform!</p>
+      </div>
+    );
+  }
+
+  return <Form config={registrationFormConfig} onSubmit={handleSubmit} />;
+};
+
+// Newsletter Form Demo Component
+const NewsletterFormDemo: React.FC = () => {
+  const [submitted, setSubmitted] = useState(false);
+
+  const newsletterFormConfig: FormConfig = {
+    fields: [
+      {
+        name: 'email',
+        type: 'email',
+        label: 'Email Address',
+        placeholder: 'Enter your email',
+        validation: { required: true, email: true }
+      }
+    ],
+    submitText: 'Subscribe'
+  };
+
+  const handleSubmit = async (data: Record<string, FormFieldValue>) => {
+    console.log('Newsletter signup:', data);
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
+
+  if (submitted) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <div className="flex items-center space-x-2 text-green-600">
+          <span>✓</span>
+          <span>Successfully subscribed!</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-end space-x-4">
+      <div className="flex-1">
+        <Form config={newsletterFormConfig} onSubmit={handleSubmit} />
+      </div>
+    </div>
+  );
+};
 
 export const DesignSystemDemo: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +172,7 @@ export const DesignSystemDemo: React.FC = () => {
             Design System Demo
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Showcase of our Card and Button components
+            Showcase of our Button, Card, and Form components
           </p>
         </div>
 
@@ -205,6 +360,38 @@ export const DesignSystemDemo: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Form Components Section */}
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
+            Form Components
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card title="Contact Form" variant="elevated">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Simple contact form with validation
+              </p>
+              <ContactFormDemo />
+            </Card>
+
+            <Card title="User Registration" variant="elevated">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Complex form with all field types
+              </p>
+              <RegistrationFormDemo />
+            </Card>
+          </div>
+
+          <div className="mt-6">
+            <Card title="Newsletter Signup" variant="outline">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Inline form layout example
+              </p>
+              <NewsletterFormDemo />
             </Card>
           </div>
         </section>
