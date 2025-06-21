@@ -12,6 +12,76 @@ from interactions.serializers import LikeCreateSerializer, ReviewSerializer, Rev
 class CircuitViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Circuit.objects.all().order_by('name')
     serializer_class = CircuitSerializer
+    
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='likes', url_name='likes', serializer_class=LikeCreateSerializer)
+    def likes(self, request, pk=None):
+        """
+        GET: Check if current user likes this circuit
+        POST: Like this circuit
+        DELETE: Unlike this circuit
+        """
+        circuit = self.get_object()
+        
+        if request.method == 'GET':
+            result = LikeService.check_like(request.user, circuit)
+            if result['success']:
+                return Response({'liked': result['liked']}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        elif request.method == 'POST':
+            result = LikeService.create_like(request.user, circuit)
+            if result['success']:
+                return Response(result['like'], status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif request.method == 'DELETE':
+            result = LikeService.remove_like(request.user, circuit)
+            if result['success']:
+                return Response({'liked': False}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                error_status = status.HTTP_401_UNAUTHORIZED if 'Authentication required' in result['error'] else status.HTTP_404_NOT_FOUND
+                return Response({'error': result['error']}, status=error_status)
+    
+    @action(detail=True, methods=['get', 'post', 'put', 'delete'], url_path='reviews', url_name='reviews', serializer_class=ReviewCreateUpdateSerializer)
+    def reviews(self, request, pk=None):
+        """
+        GET: Get all reviews for this circuit
+        POST: Create a review for this circuit
+        PUT: Update current user's review for this circuit
+        DELETE: Delete current user's review for this circuit
+        """
+        circuit = self.get_object()
+        
+        if request.method == 'GET':
+            result = ReviewService.get_reviews_for_object(circuit)
+            return Response(result['reviews'], status=status.HTTP_200_OK)
+        
+        elif request.method == 'POST':
+            result = ReviewService.create_review(request.user, circuit, request.data)
+            if result['success']:
+                return Response(result['review'], status=status.HTTP_201_CREATED)
+            else:
+                error_status = status.HTTP_401_UNAUTHORIZED if 'Authentication required' in result['error'] else status.HTTP_400_BAD_REQUEST
+                return Response({'error': result['error']}, status=error_status)
+        
+        elif request.method == 'PUT':
+            result = ReviewService.update_review(request.user, circuit, request.data)
+            if result['success']:
+                return Response(result['review'], status=status.HTTP_200_OK)
+            else:
+                error_status = status.HTTP_401_UNAUTHORIZED if 'Authentication required' in result['error'] else status.HTTP_404_NOT_FOUND
+                return Response({'error': result['error']}, status=error_status)
+        
+        elif request.method == 'DELETE':
+            result = ReviewService.delete_review(request.user, circuit)
+            if result['success']:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                error_status = status.HTTP_401_UNAUTHORIZED if 'Authentication required' in result['error'] else status.HTTP_404_NOT_FOUND
+                return Response({'error': result['error']}, status=error_status)
+    
 
 class RaceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Race.objects.all().order_by('start_at')
