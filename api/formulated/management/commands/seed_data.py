@@ -4,8 +4,10 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from teams.models import Team, Member, TeamStatus, MemberRole
 from races.models import Circuit, Race, Position
+from interactions.models import Review, Like
 from django.db import transaction
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 
 
 class Command(BaseCommand):
@@ -32,6 +34,9 @@ class Command(BaseCommand):
             
             # Create race positions
             self.create_monaco_2024_positions(monaco_race, teams)
+            
+            # Create sample reviews and likes
+            self.create_sample_interactions(teams, monaco_race)
             
             self.stdout.write(self.style.SUCCESS('Data seeding completed successfully!'))
 
@@ -248,4 +253,180 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(
                         self.style.WARNING(f'Position for {result["driver"]} already exists')
-                    ) 
+                    )
+
+    def create_sample_interactions(self, teams, monaco_race):
+        """Create sample reviews and likes for teams, drivers, and races"""
+        admin_user = User.objects.get(username='admin')
+        test_user = User.objects.get(username='testuser')
+        users = [admin_user, test_user]
+        
+        # Create reviews for teams
+        self.create_team_reviews(teams, users)
+        
+        # Create reviews for race
+        self.create_race_reviews(monaco_race, users)
+        
+        # Create likes for teams
+        self.create_team_likes(teams, users)
+        
+        # Create likes for drivers
+        self.create_driver_likes(teams, users)
+        
+        # Create likes for race
+        self.create_race_likes(monaco_race, users)
+
+    def create_team_reviews(self, teams, users):
+        """Create sample reviews for teams"""
+        team_reviews_data = [
+            {
+                'team_name': 'Ferrari',
+                'reviews': [
+                    {'user': users[0], 'rating': 5, 'description': 'Legendary team with incredible history and passion. Forza Ferrari!'},
+                    {'user': users[1], 'rating': 4, 'description': 'Great team but strategy could be better sometimes.'}
+                ]
+            },
+            {
+                'team_name': 'McLaren',
+                'reviews': [
+                    {'user': users[0], 'rating': 4, 'description': 'Strong comeback in recent years. Love their innovative approach.'},
+                ]
+            },
+            {
+                'team_name': 'Red Bull Racing',
+                'reviews': [
+                    {'user': users[1], 'rating': 5, 'description': 'Dominant performance in recent seasons. Incredible engineering.'}
+                ]
+            },
+            {
+                'team_name': 'Mercedes',
+                'reviews': [
+                    {'user': users[0], 'rating': 4, 'description': 'Former champions working hard to get back to the top.'}
+                ]
+            }
+        ]
+        
+        team_record_type = ContentType.objects.get_for_model(Team)
+        
+        for team_data in team_reviews_data:
+            if team_data['team_name'] in teams:
+                team = teams[team_data['team_name']]['team']
+                
+                for review_data in team_data['reviews']:
+                    review, created = Review.objects.get_or_create(
+                        user=review_data['user'],
+                        record_type=team_record_type,
+                        record_id=team.id,
+                        defaults={
+                            'rating': review_data['rating'],
+                            'description': review_data['description']
+                        }
+                    )
+                    
+                    if created:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Review for team "{team_data["team_name"]}" created by {review_data["user"].username}')
+                        )
+
+    def create_race_reviews(self, race, users):
+        """Create sample reviews for the Monaco race"""
+        race_reviews_data = [
+            {'user': users[0], 'rating': 5, 'description': 'What a thrilling Monaco GP! Charles winning at home was incredible.'},
+            {'user': users[1], 'rating': 4, 'description': 'Great race overall, though Monaco is always tough for overtaking.'}
+        ]
+        
+        race_record_type = ContentType.objects.get_for_model(Race)
+        
+        for review_data in race_reviews_data:
+            review, created = Review.objects.get_or_create(
+                user=review_data['user'],
+                record_type=race_record_type,
+                record_id=race.id,
+                defaults={
+                    'rating': review_data['rating'],
+                    'description': review_data['description']
+                }
+            )
+            
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS(f'Review for Monaco race created by {review_data["user"].username}')
+                )
+
+    def create_team_likes(self, teams, users):
+        """Create sample likes for teams"""
+        team_likes_data = [
+            {'team_name': 'Ferrari', 'users': users},  # Both users like Ferrari
+            {'team_name': 'McLaren', 'users': [users[0]]},  # Only admin likes McLaren
+            {'team_name': 'Red Bull Racing', 'users': [users[1]]},  # Only testuser likes Red Bull
+            {'team_name': 'Mercedes', 'users': users},  # Both users like Mercedes
+            {'team_name': 'Aston Martin', 'users': [users[0]]},  # Only admin likes Aston Martin
+        ]
+        
+        team_record_type = ContentType.objects.get_for_model(Team)
+        
+        for like_data in team_likes_data:
+            if like_data['team_name'] in teams:
+                team = teams[like_data['team_name']]['team']
+                
+                for user in like_data['users']:
+                    like, created = Like.objects.get_or_create(
+                        user=user,
+                        record_type=team_record_type,
+                        record_id=team.id
+                    )
+                    
+                    if created:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Like for team "{like_data["team_name"]}" created by {user.username}')
+                        )
+
+    def create_driver_likes(self, teams, users):
+        """Create sample likes for drivers"""
+        driver_likes_data = [
+            {'driver_name': 'Charles Leclerc', 'team_name': 'Ferrari', 'users': users},
+            {'driver_name': 'Max Verstappen', 'team_name': 'Red Bull Racing', 'users': users},
+            {'driver_name': 'Lewis Hamilton', 'team_name': 'Mercedes', 'users': [users[0]]},
+            {'driver_name': 'Lando Norris', 'team_name': 'McLaren', 'users': [users[1]]},
+            {'driver_name': 'Fernando Alonso', 'team_name': 'Aston Martin', 'users': [users[0]]},
+        ]
+        
+        member_record_type = ContentType.objects.get_for_model(Member)
+        
+        for like_data in driver_likes_data:
+            if like_data['team_name'] in teams:
+                # Find the driver in the team
+                driver = None
+                for team_driver in teams[like_data['team_name']]['drivers']:
+                    if team_driver.name == like_data['driver_name']:
+                        driver = team_driver
+                        break
+                
+                if driver:
+                    for user in like_data['users']:
+                        like, created = Like.objects.get_or_create(
+                            user=user,
+                            record_type=member_record_type,
+                            record_id=driver.id
+                        )
+                        
+                        if created:
+                            self.stdout.write(
+                                self.style.SUCCESS(f'Like for driver "{like_data["driver_name"]}" created by {user.username}')
+                            )
+
+    def create_race_likes(self, race, users):
+        """Create sample likes for the Monaco race"""
+        race_record_type = ContentType.objects.get_for_model(Race)
+        
+        for user in users:
+            like, created = Like.objects.get_or_create(
+                user=user,
+                record_type=race_record_type,
+                record_id=race.id
+            )
+            
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS(f'Like for Monaco race created by {user.username}')
+                ) 
