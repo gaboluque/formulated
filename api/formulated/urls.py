@@ -8,6 +8,7 @@ from rest_framework import viewsets
 
 
 from teams.views import TeamViewSet, MemberViewSet
+from races.views import CircuitViewSet, RaceViewSet, PositionViewSet
 
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -25,6 +26,9 @@ router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'teams', TeamViewSet)
 router.register(r'members', MemberViewSet)
+router.register(r'circuits', CircuitViewSet)
+router.register(r'races', RaceViewSet)
+router.register(r'positions', PositionViewSet)
 
 urlpatterns = [
     # Admin

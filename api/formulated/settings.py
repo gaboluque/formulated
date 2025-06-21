@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     
     # Apps
     'formulated',
-    'teams'
+    'teams',
+    'races'
 ]
 
 MIDDLEWARE = [
