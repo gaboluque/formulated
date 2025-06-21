@@ -18,7 +18,48 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Include cookies for session-based auth
 });
+
+// Store CSRF token in memory
+let csrfToken: string | null = null;
+
+// Function to get CSRF token from Django
+async function getCsrfToken(): Promise<string | null> {
+  if (csrfToken) {
+    return csrfToken;
+  }
+  
+  try {
+    const response = await axios.get(`${BASE_URL}/auth/csrf/`, {
+      withCredentials: true,
+    });
+    csrfToken = response.data.csrfToken;
+    return csrfToken;
+  } catch (error) {
+    console.error('Failed to get CSRF token:', error);
+    return null;
+  }
+}
+
+// Request interceptor to add CSRF token to non-safe requests
+apiClient.interceptors.request.use(
+  async (config) => {
+    // Add CSRF token to non-safe HTTP methods
+    const unsafeMethods = ['post', 'put', 'patch', 'delete'];
+    if (config.method && unsafeMethods.includes(config.method.toLowerCase())) {
+      const token = await getCsrfToken();
+      if (token && config.headers) {
+        // Set the CSRF token header
+        config.headers['X-CSRFToken'] = token;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
@@ -29,10 +70,10 @@ apiClient.interceptors.response.use(
     // Handle common error scenarios
     const status = error.response?.status;
     if (status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('authToken');
-      // You might want to redirect to login page here
+      // Unauthorized - handle authentication failure
       console.warn('Authentication expired. Please log in again.');
+      // You might want to trigger a logout or redirect to login page here
+      // This will be handled by the auth context
     } else if (status === 403) {
       console.error('Access denied.');
     } else if (status && status >= 500) {

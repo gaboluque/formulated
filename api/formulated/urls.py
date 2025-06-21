@@ -1,25 +1,11 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.urls import path, include
 
 from rest_framework import routers
-from rest_framework import serializers
-from rest_framework import viewsets
-
 
 from teams.views import TeamViewSet, MemberViewSet
 from races.views import CircuitViewSet, RaceViewSet, PositionViewSet
-
-# Serializers define the API representation.
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ['url', 'username', 'email', 'is_staff']
-
-# ViewSets define the view behavior.
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+from .auth_views import register, login_user, logout_user, current_user, csrf_token, UserViewSet
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -37,4 +23,11 @@ urlpatterns = [
     # API
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    
+    # Auth endpoints
+    path('api/auth/register/', register, name='register'),
+    path('api/auth/login/', login_user, name='login'),
+    path('api/auth/logout/', logout_user, name='logout'),
+    path('api/auth/me/', current_user, name='current_user'),
+    path('api/auth/csrf/', csrf_token, name='csrf_token'),
 ]
