@@ -1,0 +1,266 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# React/Vite/Tailwind Client Project Rules
+
+You are working on a modern React frontend built with Vite, TypeScript, and Tailwind CSS. Follow these comprehensive guidelines to maintain consistency, performance, and best practices throughout the client-side codebase.
+
+## Project Architecture & Organization
+
+### Folder Structure
+- **Maintain consistent folder structure**:
+  ```
+  src/
+    components/          # Reusable UI components
+      _demo/            # Demo/example components (prefixed with _)
+      index.ts          # Barrel exports for all components
+    lib/
+      api/              # API client and service layer
+      types/            # TypeScript type definitions
+      utils.ts          # Utility functions
+    routing/            # Route configuration and router setup
+    pages/              # Main page components
+    assets/             # Static assets (images, icons, etc.)
+  ```
+- **Use exports** in `components/component.ts` -> `export const Component` for clean imports
+- **Prefix demo/temp components** with underscore (e.g., `_demo/`)
+- **Colocate related files** - keep component, styles, and tests together when needed
+
+### Component Organization
+- **Export both component and props interface** from each component file
+- **Use consistent naming**: PascalCase for components, camelCase for props
+- **Group imports logically**: React imports, third-party, local components, types, utilities
+- **Create focused, single-responsibility components**
+
+## TypeScript Best Practices
+
+### Type Definitions
+- **Define explicit interfaces** for all component props:
+  ```typescript
+  export interface ButtonProps {
+    variant?: 'primary' | 'secondary' | 'outline';
+    size?: 'sm' | 'md' | 'lg';
+    isLoading?: boolean;
+    children: React.ReactNode;
+  }
+  ```
+- **Extend HTML element interfaces** when creating wrapper components
+- **Use union types** for controlled variants and options
+- **Export types alongside components** for external consumption
+- **Use generic types** for reusable components and API responses
+
+### Type Safety
+- **Use strict TypeScript configuration** with proper compiler options
+- **Avoid `any` type** - use `unknown` or proper type definitions
+- **Use type assertions sparingly** and only when necessary
+- **Leverage TypeScript's utility types** (`Partial`, `Required`, `Pick`, `Omit`)
+- **Define API response types** that match backend schemas exactly
+
+## React Component Patterns
+
+### Component Structure
+- **Use functional components** with hooks exclusively
+- **Implement proper prop destructuring** with defaults
+- **Use React.FC type** for components when beneficial
+- **Handle component composition** through children prop and compound components
+- **Implement proper ref forwarding** when needed
+
+### State Management
+- **Use local state** for component-specific data
+- **Lift state up** when multiple components need access
+- **Use React Query/SWR** for server state management (when implemented)
+- **Implement proper error boundaries** for component error handling
+- **Use context sparingly** - prefer prop drilling for simple cases
+
+### Component Variants and Styling
+- **Define variant objects** outside component scope for performance:
+  ```typescript
+  const buttonVariants = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    secondary: 'bg-gray-600 text-white hover:bg-gray-700'
+  };
+  ```
+- **Use size objects** for consistent sizing patterns
+- **Implement proper className merging** using utility functions like `cn()`
+- **Support className prop** for styling flexibility
+
+## Tailwind CSS Guidelines
+
+### Styling Patterns
+- **Use Tailwind's utility-first approach** consistently
+- **Implement dark mode support** using `dark:` prefix
+- **Use semantic color names** and maintain consistency across components
+- **Leverage Tailwind's responsive prefixes** (`sm:`, `md:`, `lg:`)
+- **Use Tailwind's built-in transitions** for smooth animations
+
+### Custom Utilities
+- **Use CSS custom properties** for complex theming when needed
+- **Avoid inline styles** - prefer Tailwind utilities or CSS classes
+- **Use Tailwind's arbitrary value syntax** `[]` sparingly
+
+### Responsive Design
+- **Design mobile-first** using Tailwind's responsive prefixes
+- **Test on multiple screen sizes** during development
+- **Use responsive typography** with appropriate scaling
+- **Implement proper spacing** using Tailwind's spacing scale
+
+## API Integration & Data Fetching
+
+### API Client Structure
+- **Use a centralized API client** with proper configuration
+- **Implement proper error handling** with interceptors
+- **Use TypeScript generics** for type-safe API calls:
+  ```typescript
+  get: <T = unknown>(url: string, config = {}) => apiClient.get<T>(url, config)
+  ```
+- **Handle loading states** consistently across the application
+- **Implement proper timeout** and retry logic
+
+### Error Handling
+- **Catch and handle API errors** at the service layer
+- **Display user-friendly error messages** in components
+- **Log errors appropriately** for debugging without exposing sensitive data
+- **Implement error boundaries** for component-level error handling
+- **Use proper HTTP status code handling** (401, 403, 404, 500)
+
+### Data Types
+- **Mirror backend types** exactly in TypeScript interfaces
+- **Use proper date handling** with Date objects or libraries like date-fns
+- **Implement pagination types** for paginated API responses
+- **Handle nullable/optional fields** properly in type definitions
+
+## Performance Optimization
+
+### Component Performance
+- **Use React.memo** for expensive components that receive stable props
+- **Implement proper key props** for list items
+- **Avoid unnecessary re-renders** by optimizing prop passing
+- **Use callback hooks** (`useCallback`, `useMemo`) judiciously
+- **Lazy load components** with `React.lazy()` for code splitting
+
+### Bundle Optimization
+- **Use Vite's built-in optimizations** and proper build configuration
+- **Implement proper tree shaking** by using ES6 imports
+- **Optimize images** and use appropriate formats (WebP, AVIF)
+- **Use dynamic imports** for large dependencies
+- **Monitor bundle size** and optimize when necessary
+
+### Loading States
+- **Implement loading indicators** for async operations
+- **Use skeleton screens** for better perceived performance
+- **Show appropriate loading states** (button loading, page loading, etc.)
+- **Handle error states** gracefully with retry options
+
+## Accessibility (a11y)
+
+### Semantic HTML
+- **Use semantic HTML elements** (button, nav, main, section, etc.)
+- **Implement proper heading hierarchy** (h1, h2, h3, etc.)
+- **Use proper form labels** and associations
+- **Implement proper focus management** for interactive elements
+
+### ARIA Attributes
+- **Add ARIA labels** for screen readers when needed
+- **Use proper ARIA roles** for custom components
+- **Implement proper focus indicators** with visible focus styles
+- **Handle keyboard navigation** for all interactive elements
+
+### Color and Contrast
+- **Maintain sufficient color contrast** for text and backgrounds
+- **Don't rely solely on color** to communicate information
+- **Support high contrast mode** and reduced motion preferences
+- **Test with screen readers** and keyboard-only navigation
+
+## Testing Strategies
+
+### Component Testing
+- **Write unit tests** for component logic and behavior
+- **Test component variants** and edge cases
+- **Mock API calls** in component tests
+- **Test accessibility** with proper testing tools
+- **Use Testing Library** best practices for user-centric testing
+
+### Integration Testing
+- **Test component interactions** and data flow
+- **Test routing** and navigation behavior
+- **Test form submission** and validation
+- **Test error scenarios** and recovery
+
+## Error Handling & User Experience
+
+### Error States
+- **Display user-friendly error messages** instead of technical errors
+- **Provide recovery actions** (retry buttons, refresh options)
+- **Handle network failures** gracefully
+- **Implement proper form validation** with clear error messages
+- **Log errors to monitoring services** (when implemented)
+
+### Loading States
+- **Show immediate feedback** for user actions
+- **Use appropriate loading indicators** (spinners, skeletons, progress bars)
+- **Disable interactive elements** during loading
+- **Provide loading timeouts** with appropriate messaging
+
+### User Feedback
+- **Implement toast notifications** for success/error messages
+- **Use consistent messaging** across the application
+- **Provide clear call-to-action buttons** with descriptive text
+- **Handle empty states** with helpful guidance
+
+## Development Workflow
+
+### Code Quality
+- **Follow ESLint rules** and maintain consistent code style
+- **Use Prettier** for consistent code formatting
+- **Write meaningful commit messages** following conventional commits
+- **Use TypeScript strict mode** with proper type checking
+- **Review code for performance** and security issues
+
+### Development Tools
+- **Use Vite's hot reload** effectively during development
+- **Leverage browser dev tools** for debugging and performance
+- **Use React Developer Tools** for component debugging
+- **Test responsive design** using browser dev tools
+- **Use TypeScript errors** to catch issues early
+
+### Environment Configuration
+- **Use environment variables** for configuration (API URLs, feature flags)
+- **Support multiple environments** (development, staging, production)
+- **Use Vite's environment variable** prefix (VITE_) for client-side variables
+- **Never expose sensitive data** in client-side environment variables
+
+## Build & Deployment
+
+### Build Optimization
+- **Use Vite's production build** with proper optimization
+- **Implement proper caching strategies** for static assets
+- **Use proper base URL configuration** for deployment
+- **Optimize images and assets** for web delivery
+- **Implement proper error handling** for build failures
+
+### Deployment Best Practices
+- **Use containerization** (Docker) for consistent deployments
+- **Implement proper health checks** for deployment verification
+- **Use proper CI/CD pipelines** for automated testing and deployment
+- **Monitor application performance** in production
+- **Implement proper logging** for production debugging
+
+## Security Best Practices
+
+### Client-Side Security
+- **Sanitize user input** before displaying or processing
+- **Use HTTPS** for all production deployments
+- **Implement proper CORS** handling
+- **Avoid storing sensitive data** in localStorage or sessionStorage
+- **Use proper authentication patterns** with secure token handling
+
+### Data Protection
+- **Validate all user input** on both client and server side
+- **Use proper form validation** to prevent malicious input
+- **Implement rate limiting** for API calls when possible
+- **Handle authentication tokens** securely
+- **Never expose API keys** or secrets in client-side code
+
+Remember: These rules reflect modern React development best practices and should be adapted as the project evolves. Consistency across the codebase is key to maintainability and developer experience.

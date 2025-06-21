@@ -1,0 +1,222 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Django API Project Rules
+
+You are working on a Django REST Framework API project. Follow these comprehensive guidelines to maintain consistency, security, and best practices throughout the codebase.
+
+## Project Architecture & Organization
+
+### App Structure
+- **Keep apps focused and cohesive** - each app should represent a distinct domain (teams, races, interactions)
+- **Use consistent directory structure** within each app:
+  ```
+  app_name/
+    __init__.py
+    admin.py
+    apps.py
+    models.py
+    serializers.py
+    views.py
+    tests.py
+    migrations/
+    services/        # Business logic layer
+  ```
+- **Separate business logic** into service classes under `services/` directories
+- **Use mixins** for reusable functionality across viewsets (like `RecordMixin`)
+
+### Configuration Management
+- **Always use environment variables** for sensitive configuration via `python-decouple`
+- **Provide sensible defaults** for development while requiring explicit production config
+- **Never commit secrets** - use `.env` files locally, environment variables in production
+- **Structure settings clearly** with comments explaining each section
+
+## Django Models & Database
+
+### Model Design
+- **Use UUID primary keys** for all models to avoid enumeration attacks and enable distributed systems
+  ```python
+  id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+  ```
+- **Always include timestamps** on models:
+  ```python
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
+  ```
+- **Use descriptive `related_name`** attributes for foreign keys:
+  ```python
+  team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='members')
+  ```
+- **Implement meaningful `__str__` methods** for all models
+- **Use TextChoices** for enumerated fields instead of hardcoded strings
+
+### Database Best Practices
+- **Use appropriate `on_delete` behaviors** - CASCADE for ownership, PROTECT for important references
+- **Add database constraints** via `Meta.unique_together`, `Meta.constraints`, and field validators
+- **Use `select_related()` and `prefetch_related()`** in querysets to avoid N+1 queries
+- **Order querysets consistently** using `Meta.ordering` or explicit `order_by()`
+- **Use database migrations** for all schema changes, never manually alter production databases
+
+### Polymorphic Relationships
+- **Use ContentType framework** for polymorphic relationships (like reviews/likes on multiple models)
+- **Create generic foreign keys properly**:
+  ```python
+  record_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+  record_id = models.UUIDField()
+  record = GenericForeignKey('record_type', 'record_id')
+  ```
+- **Add appropriate constraints** to ensure data integrity in polymorphic relationships
+
+## Django REST Framework Patterns
+
+### ViewSets
+- **Use appropriate viewset types**:
+  - `ReadOnlyModelViewSet` for read-only resources
+  - `ModelViewSet` for full CRUD operations
+  - Custom viewsets when needed
+- **Implement proper permission classes** for authentication/authorization
+- **Use mixins** for shared functionality across viewsets
+- **Override `get_queryset()`** when filtering is needed
+
+### Serializers
+- **Use `HyperlinkedModelSerializer`** for API discoverability
+- **Include proper field selection** - be explicit about exposed fields
+- **Use `HyperlinkedRelatedField`** for relationships to maintain HATEOAS principles
+- **Implement validation** at the serializer level for business rules
+- **Create separate serializers** for different actions (create/update vs read)
+
+### API Design
+- **Follow RESTful conventions** for URL patterns and HTTP methods
+- **Use DRF routers** for consistent URL generation
+- **Implement proper HTTP status codes** in responses
+- **Add pagination** to list endpoints (already configured globally)
+- **Use nested routes** sparingly - prefer flat structures with filters
+
+## Service Layer Architecture
+
+### Service Classes
+- **Create service classes** for complex business logic separate from views
+- **Use static methods** for stateless operations
+- **Return consistent response dictionaries**:
+  ```python
+  return {
+      'success': True/False,
+      'data': serialized_data,  # on success
+      'error': error_message    # on failure
+  }
+  ```
+- **Handle exceptions** within service methods and return structured errors
+- **Keep services focused** - one service class per domain/model
+
+### Error Handling
+- **Use structured error responses** consistently across all services
+- **Validate user authentication** at the service layer
+- **Handle `DoesNotExist` exceptions** gracefully
+- **Log errors appropriately** without exposing sensitive information
+- **Use try/except blocks** around database operations and external calls
+
+## Security Best Practices
+
+### Authentication & Authorization
+- **Require authentication** for all write operations
+- **Implement proper permission classes** on viewsets
+- **Validate user permissions** in service layer methods
+- **Use Django's built-in User model** unless specific requirements demand custom user models
+
+### Data Protection
+- **Never expose sensitive data** in serializers or logs
+- **Validate and sanitize** all user input
+- **Use parameterized queries** (Django ORM handles this automatically)
+- **Implement rate limiting** for API endpoints in production
+- **Configure CORS** properly - avoid `CORS_ALLOW_ALL_ORIGINS = True` in production
+
+### Security Headers & Middleware
+- **Use Django security middleware** in proper order
+- **Configure security headers** (CSRF, X-Frame-Options, etc.)
+- **Use HTTPS** in production with proper SSL configuration
+- **Keep dependencies updated** and monitor for security vulnerabilities
+
+## Code Quality & Testing
+
+### Python Code Style
+- **Follow PEP 8** style guidelines
+- **Use meaningful variable and function names**
+- **Keep functions and methods focused** and under 50 lines when possible
+- **Add docstrings** to service methods and complex functions
+- **Use type hints** where helpful for clarity
+
+### Testing
+- **Write tests for all service methods** focusing on business logic
+- **Test API endpoints** including authentication and permission scenarios
+- **Use Django's TestCase** and DRF's APITestCase
+- **Create fixtures** for consistent test data
+- **Test error conditions** and edge cases
+- **Maintain high test coverage** for critical paths
+
+### Code Organization
+- **Import order**: Django imports, third-party imports, local imports
+- **Group related functionality** together
+- **Remove unused imports** and dead code
+- **Use consistent naming conventions** across the project
+
+## Performance & Optimization
+
+### Database Optimization
+- **Use `select_related()`** for foreign key relationships
+- **Use `prefetch_related()`** for reverse foreign keys and many-to-many
+- **Add database indexes** for frequently queried fields
+- **Use `only()` and `defer()`** to limit field selection when appropriate
+- **Monitor slow queries** and optimize as needed
+
+### API Performance
+- **Implement caching** for expensive operations
+- **Use pagination** consistently for large datasets
+- **Consider using `ListSerializer`** for bulk operations
+- **Monitor API response times** and optimize bottlenecks
+
+## Management Commands
+
+### Data Management
+- **Create management commands** for data seeding, migrations, and maintenance
+- **Use database transactions** in management commands for data consistency
+- **Add proper logging** and progress indicators
+- **Handle errors gracefully** with meaningful error messages
+- **Make commands idempotent** when possible
+
+### Command Structure
+- **Follow Django command conventions**
+- **Use `transaction.atomic()`** for operations that must succeed or fail together
+- **Provide helpful output** using `self.stdout.write()` with appropriate styling
+- **Check for existing data** before creating to avoid duplicates
+
+## Environment & Deployment
+
+### Environment Configuration
+- **Use separate settings** for development, staging, and production
+- **Configure logging** appropriately for each environment
+- **Use environment variables** for all configuration that varies by environment
+- **Document required environment variables** in README or deployment docs
+
+### Docker & Containerization
+- **Keep Dockerfile lean** and use multi-stage builds when appropriate
+- **Don't run as root** in production containers
+- **Use Docker Compose** for local development orchestration
+- **Set appropriate health checks** for containers
+
+## Documentation & API Standards
+
+### API Documentation
+- **Document all endpoints** with clear descriptions
+- **Provide example requests/responses**
+- **Document authentication requirements**
+- **Keep API documentation up to date** with code changes
+
+### Code Documentation
+- **Write clear commit messages** following conventional commits
+- **Add docstrings** to service methods and complex functions
+- **Document business logic** and non-obvious implementation decisions
+- **Keep README updated** with setup and development instructions
+
+Remember: These rules reflect the current codebase patterns and should evolve with the project. Consistency is key - follow the established patterns throughout the codebase. 

@@ -1,0 +1,290 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Formulated Project - Cursor Rules
+
+## Project Overview
+
+**Formulated** is a full-stack racing application that manages teams, races, and user interactions. It consists of:
+
+- **API Backend**: Django REST Framework with PostgreSQL
+- **Client Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Containerization**: Docker with docker-compose for development
+
+### Core Domains
+- **Teams**: Managing racing teams and memberships
+- **Races**: Race events and results
+- **Interactions**: Reviews, likes, and user engagement features
+
+## Architecture
+
+```
+formulated/
+├── api/                    # Django REST Framework backend
+│   ├── formulated/         # Main Django project
+│   ├── teams/              # Teams app
+│   ├── races/              # Races app
+│   ├── interactions/       # User interactions (reviews, likes)
+│   └── Dockerfile
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── lib/           # API client, types, utilities
+│   │   └── routing/       # Route configuration
+│   └── Dockerfile
+├── docker-compose.yml      # Development orchestration
+└── Makefile               # Common development commands
+```
+
+## Development Environment
+
+### Prerequisites
+- Docker and Docker Compose
+- Make (for using Makefile commands)
+
+### Key Docker Commands
+
+#### Container Management
+```bash
+# Start all services (API + Client + Database)
+make up
+# or
+docker-compose up
+
+# Start in detached mode
+make up-d
+# or
+docker-compose up -d
+
+# Stop all services
+make down
+# or
+docker-compose down
+
+# Rebuild containers
+make build
+# or
+docker-compose build
+```
+
+#### Running Commands in Containers
+
+**Django API Container:**
+```bash
+# Access Django shell
+docker-compose exec api python manage.py shell
+
+# Run migrations
+docker-compose exec api python manage.py migrate
+
+# Create superuser
+docker-compose exec api python manage.py createsuperuser
+
+# Run Django management commands
+docker-compose exec api python manage.py <command>
+
+# Access container bash
+docker-compose exec api bash
+
+# Run tests
+docker-compose exec api python manage.py test
+```
+
+**React Client Container:**
+```bash
+# Install npm packages
+docker-compose exec client npm install
+
+# Run client-side commands
+docker-compose exec client npm run <script>
+
+# Access container bash
+docker-compose exec client bash
+
+# Type checking
+docker-compose exec client npm run type-check
+```
+
+**Database Operations:**
+```bash
+# Access PostgreSQL shell
+docker-compose exec db psql -U postgres -d formulated
+
+# Create database backup
+docker-compose exec db pg_dump -U postgres formulated > backup.sql
+```
+
+### Development Workflow
+
+#### Initial Setup
+1. **Start containers**: `make up` or `docker-compose up`
+2. **Run migrations**: `docker-compose exec api python manage.py migrate`
+3. **Create superuser**: `docker-compose exec api python manage.py createsuperuser`
+4. **Seed data** (if needed): `docker-compose exec api python manage.py seed_data`
+
+#### Daily Development
+1. **Start services**: `make up-d` (detached mode)
+2. **Make code changes** in your IDE
+3. **Hot reload** works automatically for both API and client
+4. **Run tests** when needed: `docker-compose exec api python manage.py test`
+5. **Stop services**: `make down` when done
+
+#### Database Migrations
+```bash
+# Create migration
+docker-compose exec api python manage.py makemigrations
+
+# Apply migrations
+docker-compose exec api python manage.py migrate
+
+# Check migration status
+docker-compose exec api python manage.py showmigrations
+```
+
+## API Development Patterns
+
+### Django Apps Structure
+Each Django app follows this pattern:
+- `models.py` - Database models with UUID primary keys
+- `serializers.py` - DRF serializers for API responses
+- `views.py` - ViewSets with proper permissions
+- `services/` - Business logic layer (separated from views)
+- `tests.py` - Comprehensive test coverage
+
+### Key Conventions
+- **UUID Primary Keys**: All models use UUID for security
+- **Service Layer**: Business logic in service classes
+- **Generic Relations**: For polymorphic relationships (reviews, likes)
+- **Proper Permissions**: Authentication required for write operations
+- **Structured Responses**: Consistent API response format
+
+### Running API Operations
+```bash
+# Check current API status
+curl http://localhost:8000/api/
+
+# Access Django admin
+# http://localhost:8000/admin/
+
+# API documentation (if implemented)
+# http://localhost:8000/api/docs/
+```
+
+## Client Development Patterns
+
+### React Architecture
+- **Components**: Reusable UI components with TypeScript
+- **API Layer**: Centralized API client with proper error handling
+- **Type Safety**: Full TypeScript integration matching backend models
+- **Styling**: Tailwind CSS with consistent design system
+
+### Client Development Commands
+```bash
+# Install new dependencies
+docker-compose exec client npm install <package>
+
+# Run linting
+docker-compose exec client npm run lint
+
+# Run type checking
+docker-compose exec client npm run type-check
+
+# Build for production
+docker-compose exec client npm run build
+```
+
+### Client Access
+- **Development Server**: http://localhost:5173/
+- **Hot Reload**: Automatically reloads on file changes
+- **API Proxy**: Configured to proxy API calls to backend
+
+## Common Development Tasks
+
+### Adding New Features
+1. **Backend**: Create/modify Django models, serializers, views
+2. **Migrations**: `docker-compose exec api python manage.py makemigrations`
+3. **Apply Migrations**: `docker-compose exec api python manage.py migrate`
+4. **Frontend**: Update TypeScript types and React components
+5. **Test**: Write and run tests for both backend and frontend
+
+### Debugging
+- **API Logs**: `docker-compose logs api`
+- **Client Logs**: `docker-compose logs client`
+- **Database Logs**: `docker-compose logs db`
+- **All Logs**: `docker-compose logs -f`
+
+### Data Management
+```bash
+# Seed development data
+docker-compose exec api python manage.py seed_data
+
+# Reset database (careful!)
+docker-compose exec api python manage.py flush
+
+# Create database backup
+docker-compose exec db pg_dump -U postgres formulated > backup_$(date +%Y%m%d).sql
+```
+
+## Environment Configuration
+
+### Environment Variables
+- **API**: Configure in `api/.env` (development) or environment variables (production)
+- **Client**: Use `VITE_` prefix for client-side variables
+- **Database**: Configured in docker-compose.yml
+
+### Production Considerations
+- Use proper environment variables for secrets
+- Configure CORS settings appropriately
+- Set up proper logging and monitoring
+- Use production-grade WSGI server (gunicorn)
+
+## Troubleshooting
+
+### Common Issues
+1. **Port conflicts**: Check if ports 8000, 5173, 5432 are available
+2. **Container not starting**: Check logs with `docker-compose logs <service>`
+3. **Database connection**: Ensure PostgreSQL container is running
+4. **API not accessible**: Verify Django is running on 0.0.0.0:8000
+
+### Reset Everything
+```bash
+# Stop all containers
+docker-compose down
+
+# Remove volumes (loses database data!)
+docker-compose down -v
+
+# Rebuild and start fresh
+docker-compose build --no-cache
+docker-compose up
+```
+
+## Testing
+
+### Backend Tests
+```bash
+# Run all tests
+docker-compose exec api python manage.py test
+
+# Run specific app tests
+docker-compose exec api python manage.py test teams
+
+# Run with coverage
+docker-compose exec api coverage run --source='.' manage.py test
+docker-compose exec api coverage report
+```
+
+### Frontend Tests
+```bash
+# Run client tests (when implemented)
+docker-compose exec client npm test
+
+# Run type checking
+docker-compose exec client npm run type-check
+```
+
+---
+
+**Remember**: This project uses Docker for consistent development environments. Always run commands within the appropriate containers using `docker-compose exec <service> <command>` to ensure proper environment setup.
