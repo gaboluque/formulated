@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 import uuid
 
 
@@ -17,14 +18,26 @@ class Circuit(models.Model):
 
 # Race
 
+class RaceStatus(models.TextChoices):
+    SCHEDULED = 'scheduled'
+    ONGOING = 'ongoing'
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+
 class Race(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     circuit = models.ForeignKey(Circuit, on_delete=models.CASCADE, related_name='races')
     name = models.CharField(max_length=255)
     description = models.TextField()
     start_at = models.DateTimeField()
+    status = models.CharField(max_length=255, choices=RaceStatus.choices, default=RaceStatus.SCHEDULED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_finished(self):
+        """Check if the race is finished - used for review validation"""
+        return self.status == RaceStatus.COMPLETED or self.start_at < timezone.now()
 
     def __str__(self):
         return f"{self.name} at {self.circuit.name}"

@@ -5,6 +5,7 @@ export { Error } from './Error';
 export { Form } from './Form';
 export { FormField } from './FormField';
 export { Layout } from './Layout';
+export { ReviewForm } from './ReviewForm';
 
 // Team components
 export * from './teams';
@@ -14,6 +15,9 @@ export * from './members';
 
 // Auth components
 export * from './auth';
+
+// Race components
+export * from './races';
 
 // Demo components
 export { DesignSystemDemo } from './_demo/DesignSystemDemo';

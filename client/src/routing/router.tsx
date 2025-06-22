@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from "react-router";
 import App from "../App";
 import { teamsApi } from "../lib/api/teams";
 import { membersApi } from "../lib/api/members";
+import { racesApi } from "../lib/api/races";
 import { Layout } from "../components/Layout";
 import { Error as ErrorComponent } from "../components/Error";
 import { DesignSystemDemo } from "../components";
@@ -11,6 +12,8 @@ import { TeamsListPage } from "../pages/TeamsListPage";
 import { TeamDetailPage } from "../pages/TeamDetailPage";
 import { MembersListPage } from "../pages/MembersListPage";
 import { MemberDetailPage } from "../pages/MemberDetailPage";
+import { RacesListPage } from "../pages/RacesListPage";
+import { RaceDetailPage } from "../pages/RaceDetailPage";
 
 export const routes: Record<string, RouteObject> = {
     root: {
@@ -68,6 +71,27 @@ export const routes: Record<string, RouteObject> = {
                 errorElement: <ErrorComponent variant="page" title="Error loading member" />,
                 Component: MemberDetailPage,
             },
+            {
+                path: "races",
+                loader: async () => {
+                    const races = await racesApi.getRaces();
+                    return { races: races.results };
+                },
+                Component: RacesListPage,
+                errorElement: <ErrorComponent variant="page" title="Application Error" />,
+            },
+            {
+                path: "races/:id",
+                loader: async ({ params }) => {
+                    const { id } = params;
+                    if (!id) throw new Error('Race ID is required');
+
+                    const race = await racesApi.getRace(id);
+                    return { race };
+                },
+                errorElement: <ErrorComponent variant="page" title="Error loading race" />,
+                Component: RaceDetailPage,
+            },
         ]
     },
     teams: {
@@ -82,6 +106,13 @@ export const routes: Record<string, RouteObject> = {
         loader: async () => {
             const members = await membersApi.getMembers();
             return { members: members.results };
+        },
+    },
+    races: {
+        path: "races",
+        loader: async () => {
+            const races = await racesApi.getRaces();
+            return { races: races.results };
         },
     },
     login: {

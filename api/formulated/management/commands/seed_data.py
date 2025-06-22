@@ -43,7 +43,7 @@ class Command(BaseCommand):
     def create_superuser(self):
         admin_username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
         admin_email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@formulated.com')
-        admin_password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'admin123')
+        admin_password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'qwerty123')
         
         if not User.objects.filter(username=admin_username).exists():
             User.objects.create_superuser(
