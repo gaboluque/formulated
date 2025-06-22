@@ -1,8 +1,10 @@
 import { useLoaderData, Link } from 'react-router';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { ReviewsList } from '../components/ReviewsList';
 import { MemberLikeButton } from '../components/members/MemberLikeButton';
-import { MemberReviewsList } from '../components/members/MemberReviewsList';
+import { membersApi } from '../lib/api/members';
+import { useReviews } from '../lib/hooks/useReviews';
 import type { Member } from '../lib/types/teams';
 
 interface LoaderData {
@@ -11,6 +13,22 @@ interface LoaderData {
 
 export const MemberDetailPage = () => {
     const { member } = useLoaderData() as LoaderData;
+
+    // Use the reviews hook
+    const {
+        reviews,
+        loading: reviewsLoading,
+        error: reviewsError,
+        handleCreateReview,
+        handleDeleteReview
+    } = useReviews({
+        entityId: member.id,
+        api: {
+            getReviews: membersApi.getReviews,
+            createReview: membersApi.createReview,
+            deleteReview: membersApi.deleteReview
+        }
+    });
 
     const getRoleColor = (role: string) => {
         switch (role) {
@@ -74,7 +92,15 @@ export const MemberDetailPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main content */}
                 <div className="lg:col-span-2">
-                    <MemberReviewsList memberId={member.id} />
+                    <ReviewsList
+                        reviews={reviews}
+                        loading={reviewsLoading}
+                        error={reviewsError}
+                        entityName="member"
+                        onCreateReview={handleCreateReview}
+                        onDeleteReview={handleDeleteReview}
+                        emptyStateMessage="Be the first to review this team member!"
+                    />
                 </div>
 
                 {/* Sidebar */}

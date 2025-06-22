@@ -1,39 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router';
+import { Link, useLoaderData } from 'react-router';
 import { Card } from '../components/Card';
-import { Error } from '../components/Error';
-import { RaceLikeButton, RaceReviewsList } from '../components/races';
+import { ReviewsList } from '../components/ReviewsList';
+import { RaceLikeButton } from '../components/races';
 import { racesApi } from '../lib/api/races';
+import { useReviews } from '../lib/hooks/useReviews';
 import type { Race } from '../lib/types/races';
 
+interface LoaderData {
+    race: Race
+}
+
 export const RaceDetailPage = () => {
-    const { id } = useParams<{ id: string }>();
-    const [race, setRace] = useState<Race | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { race } = useLoaderData() as LoaderData;
 
-    useEffect(() => {
-        const loadRace = async () => {
-            if (!id) {
-                setError('Race ID is required');
-                setLoading(false);
-                return;
-            }
+    // Use the reviews hook
+    const {
+        reviews,
+        loading: reviewsLoading,
+        error: reviewsError,
+        handleCreateReview,
+        handleDeleteReview
+    } = useReviews({
+        entityId: race.id,
+        api: {
+            getReviews: racesApi.getReviews,
+            createReview: racesApi.createReview,
+            updateReview: racesApi.updateReview,
+            deleteReview: racesApi.deleteReview
+        }
+    });
 
-            try {
-                setLoading(true);
-                const raceData = await racesApi.getRace(id);
-                setRace(raceData);
-            } catch (err) {
-                console.error('Error loading race:', err);
-                setError('Failed to load race details. Please try again later.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadRace();
-    }, [id]);
+    const isRaceFinished = () => {
+        if (!race) return false;
+        const raceDate = new Date(race.start_at);
+        const now = new Date();
+        return race.status === 'completed' || raceDate < now;
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -60,18 +62,6 @@ export const RaceDetailPage = () => {
             minute: '2-digit'
         });
     };
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center min-h-64">
-                <div className="text-lg text-gray-600 dark:text-gray-400">Loading race details...</div>
-            </div>
-        );
-    }
-
-    if (error || !race) {
-        return <Error message={error || 'Race not found'} />;
-    }
 
     return (
         <div className="space-y-8">
@@ -182,7 +172,16 @@ export const RaceDetailPage = () => {
             )}
 
             {/* Reviews */}
-            <RaceReviewsList race={race} />
+            <ReviewsList
+                reviews={reviews}
+                loading={reviewsLoading}
+                error={reviewsError}
+                entityName="race"
+                canUserReview={isRaceFinished()}
+                onCreateReview={handleCreateReview}
+                onDeleteReview={handleDeleteReview}
+                emptyStateMessage="Reviews will be available after the race is completed."
+            />
         </div>
     );
 }; 

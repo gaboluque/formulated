@@ -14,6 +14,8 @@ import { MembersListPage } from "../pages/MembersListPage";
 import { MemberDetailPage } from "../pages/MemberDetailPage";
 import { RacesListPage } from "../pages/RacesListPage";
 import { RaceDetailPage } from "../pages/RaceDetailPage";
+import { CircuitsListPage } from "../pages/CircuitsListPage";
+import { CircuitDetailPage } from "../pages/CircuitDetailPage";
 
 export const routes: Record<string, RouteObject> = {
     root: {
@@ -92,28 +94,32 @@ export const routes: Record<string, RouteObject> = {
                 errorElement: <ErrorComponent variant="page" title="Error loading race" />,
                 Component: RaceDetailPage,
             },
+            {
+                path: "circuits",
+                loader: async () => {
+                    const circuits = await racesApi.getCircuits();
+                    return { circuits: circuits.results };
+                },
+                Component: CircuitsListPage,
+                errorElement: <ErrorComponent variant="page" title="Application Error" />,
+            },
+            {
+                path: "circuits/:id",
+                loader: async ({ params }) => {
+                    const { id } = params;
+                    if (!id) throw new Error('Circuit ID is required');
+
+                    const [circuit, races] = await Promise.all([
+                        racesApi.getCircuit(id),
+                        racesApi.getRaces({ circuit_id: id })
+                    ]);
+
+                    return { circuit, races };
+                },
+                errorElement: <ErrorComponent variant="page" title="Error loading circuit" />,
+                Component: CircuitDetailPage,
+            },
         ]
-    },
-    teams: {
-        path: "teams",
-        loader: async () => {
-            const teams = await teamsApi.getTeams();
-            return { teams: teams.results };
-        },
-    },
-    members: {
-        path: "members",
-        loader: async () => {
-            const members = await membersApi.getMembers();
-            return { members: members.results };
-        },
-    },
-    races: {
-        path: "races",
-        loader: async () => {
-            const races = await racesApi.getRaces();
-            return { races: races.results };
-        },
     },
     login: {
         path: "/login",

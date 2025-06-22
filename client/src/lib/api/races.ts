@@ -4,8 +4,8 @@ import type { Like, Review, ReviewFormData, LikeResponse } from "../types/intera
 
 export const racesApi = {
     // Race operations
-    getRaces: async (): Promise<PaginatedResponse<Race>> => {
-        const response = await api.get<PaginatedResponse<Race>>('/races/');
+    getRaces: async (params?: Record<string, string>): Promise<PaginatedResponse<Race>> => {
+        const response = await api.get<PaginatedResponse<Race>>('/races/', { params });
         return response.data;
     },
 
@@ -58,5 +58,40 @@ export const racesApi = {
 
     deleteReview: async (raceId: string): Promise<void> => {
         await api.delete(`/races/${raceId}/reviews/`);
+    },
+
+    // Like operations for circuits
+    checkCircuitLike: async (circuitId: string): Promise<LikeResponse> => {
+        const response = await api.get<LikeResponse>(`/circuits/${circuitId}/likes/`);
+        return response.data;
+    },
+
+    likeCircuit: async (circuitId: string): Promise<Like> => {
+        const response = await api.post<Like>(`/circuits/${circuitId}/likes/`, {});
+        return response.data;
+    },
+
+    unlikeCircuit: async (circuitId: string): Promise<void> => {
+        await api.delete(`/circuits/${circuitId}/likes/`);
+    },
+
+    // Review operations for circuits
+    getCircuitReviews: async (circuitId: string): Promise<Review[]> => {
+        const response = await api.get<Review[]>(`/circuits/${circuitId}/reviews/`);
+        return response.data;
+    },
+
+    createCircuitReview: async (circuitId: string, reviewData: ReviewFormData): Promise<Review> => {
+        const response = await api.post<Review>(`/circuits/${circuitId}/reviews/`, reviewData);
+        return response.data;
+    },
+
+    updateCircuitReview: async (circuitId: string, reviewData: ReviewFormData): Promise<Review> => {
+        const response = await api.put<Review>(`/circuits/${circuitId}/reviews/`, reviewData);
+        return response.data;
+    },
+
+    deleteCircuitReview: async (circuitId: string): Promise<void> => {
+        await api.delete(`/circuits/${circuitId}/reviews/`);
     }
 }; 

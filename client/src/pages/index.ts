@@ -5,4 +5,6 @@ export { TeamDetailPage } from './TeamDetailPage';
 export { MembersListPage } from './MembersListPage';
 export { MemberDetailPage } from './MemberDetailPage';
 export { RacesListPage } from './RacesListPage';
-export { RaceDetailPage } from './RaceDetailPage'; 
+export { RaceDetailPage } from './RaceDetailPage';
+export { CircuitsListPage } from './CircuitsListPage';
+export { CircuitDetailPage } from './CircuitDetailPage'; 

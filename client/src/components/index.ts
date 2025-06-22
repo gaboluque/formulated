@@ -6,6 +6,7 @@ export { Form } from './Form';
 export { FormField } from './FormField';
 export { Layout } from './Layout';
 export { ReviewForm } from './ReviewForm';
+export { ReviewsList } from './ReviewsList';
 
 // Team components
 export * from './teams';
@@ -18,6 +19,9 @@ export * from './auth';
 
 // Race components
 export * from './races';
+
+// Circuit components
+export * from './circuits';
 
 // Demo components
 export { DesignSystemDemo } from './_demo/DesignSystemDemo';
