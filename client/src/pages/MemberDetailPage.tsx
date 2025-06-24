@@ -65,21 +65,44 @@ export const MemberDetailPage = () => {
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                            {member.name}
-                        </h1>
-                        <div className="flex items-center gap-3">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(member.role)}`}>
-                                {getRoleIcon(member.role)} {member.role}
-                            </span>
-                            {member.team && (
-                                <Link to={`/teams/${member.team.id}`}>
-                                    <Button variant="outline" size="sm">
-                                        View Team
-                                    </Button>
-                                </Link>
+                    <div className="flex items-center gap-6">
+                        <div>
+                            {/* Driver headshot */}
+                            {member.role === 'driver' && member.headshot_url && (
+                                <img
+                                    src={member.headshot_url}
+                                    alt={`${member.name} headshot`}
+                                    className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700 mb-4"
+                                />
                             )}
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                                {member.name}
+                                {member.role === 'driver' && member.name_acronym && (
+                                    <span className="text-xl text-gray-500 dark:text-gray-400 ml-2">
+                                        ({member.name_acronym})
+                                    </span>
+                                )}
+                            </h1>
+                            <div className="flex items-center gap-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(member.role)}`}>
+                                    {getRoleIcon(member.role)} {member.role}
+                                    {member.role === 'driver' && member.driver_number && (
+                                        <span className="ml-1 font-bold">#{member.driver_number}</span>
+                                    )}
+                                </span>
+                                {member.role === 'driver' && member.country_code && (
+                                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                        🏁 {member.country_code}
+                                    </span>
+                                )}
+                                {member.team && (
+                                    <Link to={`/teams/${member.team.id}`}>
+                                        <Button variant="outline" size="sm">
+                                            View Team
+                                        </Button>
+                                    </Link>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <MemberLikeButton memberId={member.id} />
@@ -119,11 +142,27 @@ export const MemberDetailPage = () => {
                                 </div>
                             </div>
 
-                            {member.team && (
-                                <div>
-                                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Team</span>
-                                    <p className="text-gray-900 dark:text-white">{member.team.name}</p>
-                                </div>
+                            {/* Driver-specific fields */}
+                            {member.role === 'driver' && (
+                                <>
+                                    <div>
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Driver Number</span>
+                                        <p className="text-gray-900 dark:text-white font-bold">#{member.driver_number}</p>
+                                    </div>
+
+                                    <div>
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Name Acronym</span>
+                                        <p className="text-gray-900 dark:text-white font-mono">{member.name_acronym}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</span>
+                                        <p className="text-gray-900 dark:text-white">🏁 {member.country_code}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Team</span>
+                                        <p className="text-gray-900 dark:text-white">{member.team.name}</p>
+                                    </div>
+                                </>
                             )}
 
                             <div>
@@ -155,7 +194,7 @@ export const MemberDetailPage = () => {
                                     ← Back to All Members
                                 </Button>
                             </Link>
-                            
+
                             {member.team && (
                                 <Link to={`/teams/${member.team.id}`} className="block">
                                     <Button variant="outline" className="w-full justify-start">

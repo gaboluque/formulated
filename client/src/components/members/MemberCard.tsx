@@ -42,9 +42,16 @@ export const MemberCard = ({ member }: MemberCardProps) => {
         <Card className="p-6 hover:shadow-lg transition-shadow">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        {member.name}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                        <div>
+                            <img src={member.headshot_url} alt={member.name} className="w-10 h-10 rounded-full" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                                {member.name}
+                            </h3>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2 mb-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(member.role)}`}>
                             {getRoleIcon(member.role)} {member.role}
@@ -52,11 +59,11 @@ export const MemberCard = ({ member }: MemberCardProps) => {
                     </div>
                 </div>
             </div>
-            
+
             <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
                 {member.description}
             </p>
-            
+
             {member.team && (
                 <div className="mb-4">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -66,7 +73,7 @@ export const MemberCard = ({ member }: MemberCardProps) => {
                     </p>
                 </div>
             )}
-            
+
             <div className="flex justify-between items-center">
                 <Link to={`/members/${member.id}`}>
                     <Button variant="outline" size="sm">

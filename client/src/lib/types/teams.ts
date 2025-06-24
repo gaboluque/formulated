@@ -11,6 +11,11 @@ export type Member = {
     team: Team;
     created_at: string;
     updated_at: string;
+    // Driver-specific fields
+    driver_number?: number;
+    name_acronym?: string;
+    country_code?: string;
+    headshot_url?: string;
 };
 
 export type TeamMember = {
@@ -21,6 +26,11 @@ export type TeamMember = {
     description: string;
     created_at: string;
     updated_at: string;
+    // Driver-specific fields
+    driver_number?: number;
+    name_acronym?: string;
+    country_code?: string;
+    headshot_url?: string;
 };
 
 export type Team = {
