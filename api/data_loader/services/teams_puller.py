@@ -22,10 +22,14 @@ class TeamsPuller:
     def pull_and_sync_teams(self) -> Dict[str, Any]:
         """Pull and sync teams from APISports F1 API"""
         
-        teams = self.client.get_teams()
-        self.result['teams_fetched'] = len(teams)
-        
         try:
+            teams = self.client.get_teams()
+            self.result['teams_fetched'] = len(teams)
+            
+            if not teams:
+                self.result['errors'].append("No teams found in APISports F1 API")
+                return self.result
+            
             for team in teams:
                 logger.info(f"Processing team: {team['name']}")
                 self._process_team(team)
@@ -46,41 +50,34 @@ class TeamsPuller:
         if Team.objects.filter(name=team['name']).exists():
             logger.info(f"Team {team['name']} already exists, updating...")
             team_instance = Team.objects.get(name=team['name'])
-            team_instance.logo_url = team['logo']
-            team_instance.base = team['base']
-            team_instance.first_team_entry = team['first_team_entry']
-            team_instance.world_championships = team['world_championships']
-            team_instance.highest_race_finish = team['highest_race_finish']['position']
-            team_instance.pole_positions = team['pole_positions']
-            team_instance.fastest_laps = team['fastest_laps']
-            team_instance.president = team['president']
-            team_instance.director = team['director']
-            team_instance.technical_manager = team['technical_manager']
-            team_instance.chassis = team['chassis']
-            team_instance.engine = team['engine']
-            team_instance.tyres = team['tyres']
-            team_instance.status = TeamStatus.ACTIVE
+            team_instance.update(self._team_params(team))
             team_instance.save()
             self.result['teams_updated'] += 1
         else:
             logger.info(f"Team {team['name']} does not exist, creating...")
             Team.objects.create(
-                name=team['name'],
-                logo_url=team['logo'],
-                base=team['base'],
-                first_team_entry=team['first_team_entry'],
-                world_championships=team['world_championships'],
-                highest_race_finish=team['highest_race_finish']['position'],
-                pole_positions=team['pole_positions'],
-                fastest_laps=team['fastest_laps'],
-                president=team['president'],
-                director=team['director'],
-                technical_manager=team['technical_manager'],
-                chassis=team['chassis'],
-                engine=team['engine'],
-                tyres=team['tyres'],
-                status=TeamStatus.ACTIVE
+                **self._team_params(team)
             )
             self.result['teams_created'] += 1
             
         logger.info(f"Team {team['name']} processed successfully")
+        
+    def _team_params(self, team: Dict[str, Any]) -> Dict[str, Any]:
+        """Get team parameters from APISports F1 API"""
+        return {
+            'name': team['name'],
+            'logo_url': team['logo'],
+            'base': team['base'],
+            'first_team_entry': team['first_team_entry'],
+            'world_championships': team['world_championships'],
+            'highest_race_finish': team['highest_race_finish']['position'],
+            'pole_positions': team['pole_positions'],
+            'fastest_laps': team['fastest_laps'],
+            'president': team['president'],
+            'director': team['director'],
+            'technical_manager': team['technical_manager'],
+            'chassis': team['chassis'],
+            'engine': team['engine'],
+            'tyres': team['tyres'],
+            'status': TeamStatus.ACTIVE,
+        }

@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 from typing import Dict, List, Any, Tuple
 from django.db import transaction
+import time
 
 from teams.models import Member, MemberRole, Team
-from data_loader.lib.openf1_client import OpenF1Client
+from data_loader.lib.apisports_client import APISportsClient
 
 logger = logging.getLogger(__name__)
 
@@ -12,253 +14,95 @@ class DriversPuller:
     
     def __init__(self):
         """Initialize the service with OpenF1 client"""
-        self.client = OpenF1Client()
-        
-    def pull_and_sync_drivers(self, session_key: str = "latest") -> Dict[str, Any]:
-        """
-        Pull drivers from OpenF1 and sync with database
-        
-        Args:
-            session_key: Session to pull drivers from (defaults to latest)
-            
-        Returns:
-            Dictionary with sync results
-        """
-        logger.info(f"Starting driver sync from OpenF1 session: {session_key}")
-        
-        result = {
+        self.client = APISportsClient()
+        self.result = {
             'success': False,
             'drivers_fetched': 0,
             'drivers_created': 0,
             'drivers_updated': 0,
             'errors': [],
-            'session_key': session_key
         }
         
+    def pull_and_sync_drivers(self) -> Dict[str, Any]:
+        """
+        Pull drivers from OpenF1 and sync with database
+        """
+        
         try:
-            # Fetch drivers from OpenF1
-            openf1_drivers = self._fetch_drivers_from_openf1(session_key)
-            result['drivers_fetched'] = len(openf1_drivers)
+            current_year = datetime.now().year
             
-            if not openf1_drivers:
-                result['errors'].append("No drivers found in OpenF1 API")
-                return result
+            # First get the rankings for the current year since the API
+            # doesn't return all drivers in the /drivers endpoint
+            rankings = self.client.get_drivers_rankings(current_year)
+            self.result['drivers_fetched'] = len(rankings)
             
-            # Sync drivers with database
-            created_count, updated_count, sync_errors = self._sync_drivers_to_database(openf1_drivers)
+            # Get the driver IDs from the rankings
+            driver_ids = [ranking["driver"]["id"] for ranking in rankings] 
             
-            result['drivers_created'] = created_count
-            result['drivers_updated'] = updated_count
-            result['errors'].extend(sync_errors)
-            result['success'] = True
-            
-            logger.info(
-                f"Driver sync completed: {created_count} created, "
-                f"{updated_count} updated, {len(sync_errors)} errors"
-            )
-            
-        except Exception as e:
-            error_msg = f"Failed to sync drivers: {str(e)}"
-            logger.error(error_msg)
-            result['errors'].append(error_msg)
+            print("driver_ids", driver_ids)           
         
-        return result
-    
-    def _fetch_drivers_from_openf1(self, session_key: str) -> List[Dict[str, Any]]:
-        """
-        Fetch driver data from OpenF1 API
-        
-        Args:
-            session_key: Session to fetch from
+            # If no drivers found, return an error
+            if not driver_ids:
+                self.result['errors'].append("No drivers found in APISports F1 API")
+                return self.result
             
-        Returns:
-            List of driver data dictionaries
-        """
-        try:
-            if session_key == "latest":
-                drivers = self.client.get_latest_drivers()
-            else:
-                drivers = self.client.get_drivers(session_key=session_key)
-            
-            logger.info(f"Fetched {len(drivers)} drivers from OpenF1")
-            return drivers
-            
-        except Exception as e:
-            logger.error(f"Error fetching drivers from OpenF1: {str(e)}")
-            raise
-    
-    def _sync_drivers_to_database(self, openf1_drivers: List[Dict[str, Any]]) -> Tuple[int, int, List[str]]:
-        """
-        Sync OpenF1 driver data with database
-        
-        Args:
-            openf1_drivers: List of driver data from OpenF1
-            
-        Returns:
-            Tuple of (created_count, updated_count, errors)
-        """
-        created_count = 0
-        updated_count = 0
-        errors = []
-        
-        with transaction.atomic():
-            for driver_data in openf1_drivers:
+            # Process each driver
+            for driver_id in driver_ids:                
+                # Prevent rate limiting
+                time.sleep(10) # 10 seconds between requests
+
+                logger.info(f"Processing driver: {driver_id}")
+                
                 try:
-                    created, updated = self._process_single_driver(driver_data)
-                    if created:
-                        created_count += 1
-                    elif updated:
-                        updated_count += 1
-                        
+                    driver = self.client.get_driver(driver_id)[0]
+                    
+                    if not driver:
+                        logger.error(f"Driver not found: {driver_id}")
+                        self.result['errors'].append(f"Driver not found: {driver_id}")
+                        continue
+
+                    self._process_driver(driver)
                 except Exception as e:
-                    error_msg = f"Error processing driver {driver_data.get('full_name', 'Unknown')}: {str(e)}"
-                    logger.error(error_msg)
-                    errors.append(error_msg)
-        
-        return created_count, updated_count, errors
-    
-    def _process_single_driver(self, driver_data: Dict[str, Any]) -> Tuple[bool, bool]:
-        """
-        Process a single driver - create or update in database
-        
-        Args:
-            driver_data: OpenF1 driver data
+                    logger.error(f"Error processing driver: {e}")
+                    self.result['errors'].append(f"Error processing driver ({driver_id}): {e}")
+                    continue
             
-        Returns:
-            Tuple of (was_created, was_updated)
-        """
-        driver_number = driver_data.get('driver_number')
-        if not driver_number:
-            raise ValueError("Driver number is required")
+        except Exception as e:
+            logger.error(f"Error processing drivers: {e}")
+            self.result['errors'].append(str(e))
+            return self.result
         
-        # Try to find existing driver by driver_number
-        try:
-            member = Member.objects.get(driver_number=driver_number)
-            # Update existing driver
-            updated = self._update_member_from_openf1(member, driver_data)
-            return False, updated
-            
-        except Member.DoesNotExist:
-            # Create new driver
-            member = self._create_member_from_openf1(driver_data)
-            logger.info(f"Created new driver: {member.name} (#{driver_number})")
-            return True, False
+        self.result['success'] = True
+        return self.result
     
-    def _create_member_from_openf1(self, driver_data: Dict[str, Any]) -> Member:
-        """
-        Create a new Member from OpenF1 driver data
+    def _process_driver(self, driver: Dict[str, Any]) -> None:
+        """Process a driver from APISports F1 API"""
+        logger.info(f"Processing driver: {driver['name']}")
         
-        Args:
-            driver_data: OpenF1 driver data
+        # Check if driver already exists
+        if Member.objects.filter(name=driver['name']).exists():
+            logger.info(f"Driver {driver['name']} already exists, updating...")
+            driver_instance = Member.objects.get(name=driver['name'])
+            driver_instance.update(self._driver_params(driver))
+            driver_instance.save()
+            self.result['drivers_updated'] += 1
+        else:
+            logger.info(f"Driver {driver['name']} does not exist, creating...")
+            Member.objects.create(
+                **self._driver_params(driver)
+            )
+            self.result['drivers_created'] += 1
             
-        Returns:
-            Created Member instance
-        """
-        # Find or create team
-        team = self._get_or_create_team(driver_data.get('team_name', 'Unknown Team'))
-        
-        # Create member
-        member = Member.objects.create(
-            name=driver_data.get('full_name', ''),
-            role=MemberRole.DRIVER,
-            description=f"F1 Driver - {driver_data.get('team_name', '')}",
-            team=team,
-            driver_number=driver_data.get('driver_number'),
-            name_acronym=driver_data.get('name_acronym', ''),
-            country_code=driver_data.get('country_code', ''),
-            headshot_url=driver_data.get('headshot_url', '')
-        )
-        
-        return member
-    
-    def _update_member_from_openf1(self, member: Member, driver_data: Dict[str, Any]) -> bool:
-        """
-        Update existing Member with OpenF1 data
-        
-        Args:
-            member: Existing Member instance
-            driver_data: OpenF1 driver data
-            
-        Returns:
-            True if member was updated, False if no changes needed
-        """
-        updated = False
-        
-        # Update basic fields
-        new_name = driver_data.get('full_name', '')
-        if member.name != new_name and new_name:
-            member.name = new_name
-            updated = True
-        
-        new_acronym = driver_data.get('name_acronym', '')
-        if member.name_acronym != new_acronym:
-            member.name_acronym = new_acronym
-            updated = True
-        
-        new_country = driver_data.get('country_code', '')
-        if member.country_code != new_country:
-            member.country_code = new_country
-            updated = True
-        
-        new_headshot = driver_data.get('headshot_url', '')
-        if member.headshot_url != new_headshot:
-            member.headshot_url = new_headshot
-            updated = True
-        
-        # Update team if different
-        new_team_name = driver_data.get('team_name')
-        if new_team_name and member.team.name != new_team_name:
-            new_team = self._get_or_create_team(new_team_name)
-            member.team = new_team
-            updated = True
-        
-        if updated:
-            member.save()
-            logger.info(f"Updated driver: {member.name} (#{member.driver_number})")
-        
-        return updated
-    
-    def _get_or_create_team(self, team_name: str) -> Team:
-        """
-        Get or create a team by name
-        
-        Args:
-            team_name: Team name from OpenF1
-            
-        Returns:
-            Team instance
-        """
-        if not team_name or team_name == 'Unknown Team':
-            team_name = 'Unknown Team'
-        
-        team, created = Team.objects.get_or_create(
-            name=team_name,
-            defaults={
-                'description': f'F1 Team - {team_name}',
-                'status': 'active'
-            }
-        )
-        
-        if created:
-            logger.info(f"Created new team: {team_name}")
-        
-        return team
-    
-    def get_sync_stats(self) -> Dict[str, Any]:
-        """
-        Get current driver sync statistics
-        
-        Returns:
-            Dictionary with sync stats
-        """
-        total_members = Member.objects.count()
-        f1_drivers = Member.objects.filter(
-            role=MemberRole.DRIVER,
-            driver_number__isnull=False
-        ).count()
-        
+        logger.info(f"Driver {driver['name']} processed successfully")
+
+    def _driver_params(self, driver: Dict[str, Any]) -> Dict[str, Any]:
+        """Get driver parameters from APISports F1 API"""
         return {
-            'total_members': total_members,
-            'f1_drivers': f1_drivers,
-            'non_driver_members': total_members - f1_drivers
-        } 
+            'name': driver['name'],
+            'role': MemberRole.DRIVER,
+            'team': Team.objects.get(name=driver['teams'][0]['team']['name']),
+            'driver_number': driver['number'],
+            'name_acronym': driver['abbr'],
+            'country_code': driver['country']['code'],
+            'headshot_url': driver['image'],
+        }

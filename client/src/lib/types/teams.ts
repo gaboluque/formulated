@@ -42,4 +42,17 @@ export type Team = {
     members?: TeamMember[];
     created_at: string;
     updated_at: string;
+    logo_url?: string;
+    base?: string;
+    first_team_entry?: number;
+    world_championships?: number;
+    highest_race_finish?: number;
+    pole_positions?: number;
+    fastest_laps?: number;
+    president?: string;
+    director?: string;
+    technical_manager?: string;
+    chassis?: string;
+    engine?: string;
+    tyres?: string;
 }; 

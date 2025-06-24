@@ -32,19 +32,27 @@ class APISportsClient:
             response = requests.get(url, headers=self.headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Successfully fetched {len(response.json())} records from {endpoint}")
+            print(response.json())
             return response.json()['response'] or []
         except requests.exceptions.RequestException as e:
             logger.error(f"Error making request to {url}: {e}")
             raise
         
-    def get_drivers(self) -> List[Dict[str, Any]]:
-        """Get all drivers from the APISports F1 API"""
-        endpoint = "/drivers"
+    def get_driver(self, driver_id: str) -> Dict[str, Any]:
+        """Get a driver from the APISports F1 API"""
+        endpoint = f"/drivers?id={driver_id}"
         return self._make_request(endpoint)
     
     def get_teams(self) -> List[Dict[str, Any]]:
         """Get all teams from the APISports F1 API"""
         endpoint = "/teams"
         return self._make_request(endpoint)
+    
+    def get_drivers_rankings(self, season: int) -> List[Dict[str, Any]]:
+        """Get the drivers rankings from the APISports F1 API"""
+        endpoint = f"/rankings/drivers?season={season}"
+        return self._make_request(endpoint)
+    
+    
 
     
