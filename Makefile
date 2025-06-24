@@ -8,6 +8,7 @@ help:
 	@echo "  down          - Stop all services"
 	@echo "  logs          - View logs from all services"
 	@echo "  shell         - Enter Python container shell"
+	@echo "  make-migrations - Make Django migrations"
 	@echo "  migrate       - Run Django migrations"
 	@echo "  seed          - Seed database with initial data"
 	@echo "  createsuperuser - Create Django superuser"
@@ -31,6 +32,9 @@ logs:
 # Enter Python/Django container shell
 shell:
 	docker-compose exec api bash
+
+make-migrations:
+	docker-compose exec api python manage.py makemigrations
 
 # Run Django migrations
 migrate:

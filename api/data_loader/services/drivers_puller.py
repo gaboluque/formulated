@@ -7,7 +7,6 @@ from data_loader.lib.openf1_client import OpenF1Client
 
 logger = logging.getLogger(__name__)
 
-
 class DriversPuller:
     """Service for pulling and syncing driver data from OpenF1"""
     
