@@ -10,5 +10,5 @@ class TeamViewSet(RecordMixin, viewsets.ReadOnlyModelViewSet):
 
 
 class MemberViewSet(RecordMixin, viewsets.ReadOnlyModelViewSet):
-    queryset = Member.objects.all().order_by('name')
+    queryset = Member.objects.all().order_by('driver_number', 'team__name', 'name')
     serializer_class = MemberSerializer

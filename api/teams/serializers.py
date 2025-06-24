@@ -19,7 +19,10 @@ class MemberSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='member-detail')
     team = TeamSerializer(read_only=True)
     team_url = serializers.HyperlinkedRelatedField(view_name='team-detail', source='team', read_only=True)
-    
+        
     class Meta:
         model = Member
         fields = ['url', 'id', 'name', 'role', 'description', 'team', 'team_url', 'created_at', 'updated_at']
+        
+        # Driver data
+        fields += ['driver_number', 'name_acronym', 'country_code', 'headshot_url']
