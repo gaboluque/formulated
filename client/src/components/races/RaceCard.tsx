@@ -54,24 +54,13 @@ export const RaceCard = ({ race }: RaceCardProps) => {
         <Card className="p-6 hover:shadow-lg transition-shadow">
             <div className="flex justify-between items-start mb-4">
                 <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 h-8">
                         {race.name}
                     </h3>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(race.status)}`}>
                         {getStatusIcon(race.status)} {race.status.charAt(0).toUpperCase() + race.status.slice(1)}
                     </span>
                 </div>
-                {race.winner && (
-                    <div className="text-right">
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Winner</div>
-                        <div className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                            🏆 {race.winner.driver_name}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {race.winner.team_name} • {race.winner.points} pts
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="mb-4 h-24">
@@ -90,41 +79,31 @@ export const RaceCard = ({ race }: RaceCardProps) => {
                 </div>
             </div>
 
-            {race.positions.length > 0 && (
-                <div className="mb-4">
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Top 3 Results:
-                    </div>
-                    <div className="space-y-2">
-                        {race.positions.slice(0, 3).map((position) => {
-                            const podiumColor = position.position === 1 
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                                : position.position === 2
+            <div className="mb-4">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Top 3 Results:
+                </div>
+                <div className="space-y-2 h-32">
+                    {race.positions.length > 0 ? race.positions.slice(0, 3).map((position) => {
+                        const podiumColor = position.position === 1
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                            : position.position === 2
                                 ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                                 : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-                            
-                            const medal = position.position === 1 ? '🥇' : position.position === 2 ? '🥈' : '🥉';
 
-                            return (
-                                <div key={position.id} className={`flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium ${podiumColor}`}>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">{medal}</span>
-                                        <span className="font-semibold">P{position.position}</span>
-                                        <span className="ml-2">{position.driver_name}</span>
-                                        {position.driver_number && (
-                                            <span className="ml-1 text-xs opacity-75">#{position.driver_number}</span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="text-xs mr-2">{position.team_name}</span>
-                                        <span className="font-semibold">{position.points} pts</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                        const medal = position.position === 1 ? '🥇' : position.position === 2 ? '🥈' : '🥉';
+
+                        return (
+                            <div key={position.id} className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${podiumColor} relative`}>
+                                <span className="mr-2">{medal}</span>
+                                <span className="font-semibold">P{position.position}</span>
+                                <span className="ml-2">{position.driver_acronym}</span>
+                                <span className="ml-1 text-xs opacity-75 absolute right-2">#{position?.driver_number ?? ''}</span>
+                            </div>
+                        );
+                    }) : <div className="text-sm text-gray-500 dark:text-gray-400 border-2 border-gray-200 dark:border-gray-700 rounded-md p-2">No results yet</div>}
                 </div>
-            )}
+            </div>
 
             <div className="flex justify-between items-center">
                 <Link to={`/races/${race.id}`}>

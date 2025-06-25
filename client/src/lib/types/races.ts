@@ -39,13 +39,6 @@ export type RacePosition = {
     updated_at: string;
 };
 
-export type RaceWinner = {
-    driver_name: string;
-    driver_url: string | null;
-    team_name: string;
-    points: number;
-};
-
 export type Race = {
     url: string;
     id: string;
@@ -58,7 +51,6 @@ export type Race = {
     circuit_url: string;
     positions: RacePosition[];
     positions_count: number;
-    winner: RaceWinner | null;
     created_at: string;
     updated_at: string;
 };

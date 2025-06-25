@@ -15,7 +15,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'formulated.settings')
 django.setup()
 
 from data_loader.services.races_puller import RacesPuller
-from races.models import Race, Circuit, RaceStatus
+from races.models import Race, Circuit, RaceStatus, Position
+from teams.models import Member, MemberRole
 from datetime import datetime
 import json
 
@@ -49,6 +50,8 @@ def main():
     print(f"   Races Updated: {result['races_updated']}")
     print(f"   Circuits Created: {result['circuits_created']}")
     print(f"   Circuits Updated: {result['circuits_updated']}")
+    print(f"   Positions Created: {result['positions_created']}")
+    print(f"   Positions Updated: {result['positions_updated']}")
     
     if result['errors']:
         print(f"   Errors: {len(result['errors'])}")
@@ -116,6 +119,40 @@ def main():
             print(f"   {status_emoji} {label.title()}: {count}")
     
     print(f"\n🎉 RacesPuller test completed!")
+    
+    # Show some position data if any exists
+    print("\n" + "=" * 50)
+    print("🏆 Race Positions Sample:")
+    
+    recent_positions = Position.objects.select_related('race', 'driver', 'driver__team').order_by('-race__start_at', 'position')[:10]
+    
+    if recent_positions:
+        current_race = None
+        for position in recent_positions:
+            if current_race != position.race:
+                current_race = position.race
+                print(f"\n   🏁 {position.race.name}")
+                print(f"      📅 {position.race.start_at.strftime('%Y-%m-%d')}")
+            
+            print(f"      #{position.position:2d} - {position.driver.name} ({position.driver.name_acronym})")
+            print(f"           Team: {position.driver.team.name}")
+            print(f"           Points: {position.points}, Laps: {position.laps}")
+            if position.time:
+                print(f"           Time: {position.time}")
+    else:
+        print("   No position data available yet.")
+        print("   Note: Make sure drivers exist in the database before running races sync.")
+        
+        # Show available drivers
+        drivers = Member.objects.filter(role=MemberRole.DRIVER).order_by('name')[:5]
+        if drivers:
+            print(f"\n   Available F1 Drivers ({drivers.count()} total):")
+            for driver in drivers:
+                abbr = f"({driver.name_acronym})" if driver.name_acronym else ""
+                num = f"#{driver.driver_number}" if driver.driver_number else ""
+                print(f"      {driver.name} {abbr} {num} - {driver.team.name}")
+        else:
+            print("   No F1 drivers found. Run the drivers puller first.")
 
 
 if __name__ == "__main__":

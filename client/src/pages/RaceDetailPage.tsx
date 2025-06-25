@@ -158,7 +158,7 @@ export const RaceDetailPage = () => {
                                             {position.position}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {position.driver.name}
+                                            {position.driver_acronym}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {position.points}

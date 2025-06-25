@@ -69,34 +69,18 @@ class RaceSerializer(serializers.HyperlinkedModelSerializer):
     positions = RacePositionSerializer(many=True, read_only=True)
     positions_count = serializers.SerializerMethodField()
     is_finished = serializers.BooleanField(read_only=True)
-    winner = serializers.SerializerMethodField()
     
     class Meta:
         model = Race
         fields = [
             'url', 'id', 'name', 'description', 'start_at', 'status', 'is_finished',
             'circuit', 'circuit_url', 
-            'positions', 'positions_count', 'winner',
+            'positions', 'positions_count',
             'created_at', 'updated_at'
         ]
     
     def get_positions_count(self, obj):
         return obj.positions.count()
-    
-    def get_winner(self, obj):
-        """Get the race winner (position 1)"""
-        winner_position = obj.positions.filter(position=1).first()
-        if winner_position:
-            return {
-                'driver_name': winner_position.driver.name,
-                'driver_url': self.context['request'].build_absolute_uri(
-                    f"/api/members/{winner_position.driver.id}/"
-                ) if self.context.get('request') else None,
-                'team_name': winner_position.driver.team.name,
-                'points': winner_position.points
-            }
-        return None
-
 
 class PositionSerializer(serializers.HyperlinkedModelSerializer):
     """Full position serializer with race and driver details"""

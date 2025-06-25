@@ -67,3 +67,9 @@ class APISportsClient:
         endpoint = "/competitions"
         params = {"season": season}
         return self._make_request(endpoint, params)
+    
+    def get_race_rankings(self, race_id: int) -> List[Dict[str, Any]]:
+        """Get race rankings (positions) from the APISports F1 API"""
+        endpoint = "/rankings/races"
+        params = {"race": race_id}
+        return self._make_request(endpoint, params)

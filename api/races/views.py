@@ -1,5 +1,6 @@
 from rest_framework import viewsets
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Case, When, Value, IntegerField
+from django.db.models import Q
 
 from races.models import Circuit, Race, Position, RaceStatus
 from races.serializers import CircuitSerializer, RaceSerializer, PositionSerializer
@@ -30,7 +31,7 @@ class RaceViewSet(RecordMixin, viewsets.ReadOnlyModelViewSet):
             'positions',
             queryset=Position.objects.select_related('driver', 'driver__team').order_by('position')
         )
-    ).order_by('-start_at')
+    )
     serializer_class = RaceSerializer
 
     def get_queryset(self):
@@ -66,6 +67,21 @@ class RaceViewSet(RecordMixin, viewsets.ReadOnlyModelViewSet):
         completed = self.request.query_params.get('completed')
         if completed and completed.lower() in ['true', '1']:
             queryset = queryset.filter(status=RaceStatus.COMPLETED)
+        
+        # Apply custom ordering: completed races first (most recent first), 
+        # then non-completed races (next upcoming first)
+        # Use Case/When expressions to create a proper ordering without union
+        queryset = queryset.annotate(
+            order_priority=Case(
+                When(status=RaceStatus.COMPLETED, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField()
+            )
+        ).order_by('order_priority', 
+                   Case(
+                       When(status=RaceStatus.COMPLETED, then='-start_at'),
+                       default='start_at'
+                   ))
         
         return queryset
 
