@@ -1,10 +1,43 @@
 import { api, type PaginatedResponse } from "./client";
-import type { Race, Circuit } from "../types/races";
+import type { Race, Circuit, Position, RaceStatus } from "../types/races";
 import type { Like, Review, ReviewFormData, LikeResponse } from "../types/interactions";
+
+export interface RaceFilters {
+    circuit_id?: string;
+    status?: RaceStatus;
+    year?: number;
+    season?: number;
+    upcoming?: boolean;
+    completed?: boolean;
+}
+
+export interface CircuitFilters {
+    location?: string;
+}
+
+export interface PositionFilters {
+    race_id?: string;
+    driver_id?: string;
+    team_id?: string;
+    position?: number;
+    year?: number;
+    season?: number;
+    min_points?: number;
+}
 
 export const racesApi = {
     // Race operations
-    getRaces: async (params?: Record<string, string>): Promise<PaginatedResponse<Race>> => {
+    getRaces: async (filters?: RaceFilters): Promise<PaginatedResponse<Race>> => {
+        const params: Record<string, string> = {};
+        
+        if (filters) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    params[key] = String(value);
+                }
+            });
+        }
+        
         const response = await api.get<PaginatedResponse<Race>>('/races/', { params });
         return response.data;
     },
@@ -14,15 +47,75 @@ export const racesApi = {
         return response.data;
     },
 
+    // Convenience methods for common race queries
+    getUpcomingRaces: async (): Promise<PaginatedResponse<Race>> => {
+        return racesApi.getRaces({ upcoming: true });
+    },
+
+    getCompletedRaces: async (year?: number): Promise<PaginatedResponse<Race>> => {
+        return racesApi.getRaces({ completed: true, year });
+    },
+
+    getRacesByCircuit: async (circuitId: string): Promise<PaginatedResponse<Race>> => {
+        return racesApi.getRaces({ circuit_id: circuitId });
+    },
+
+    getRacesBySeason: async (season: number): Promise<PaginatedResponse<Race>> => {
+        return racesApi.getRaces({ season });
+    },
+
     // Circuit operations
-    getCircuits: async (): Promise<PaginatedResponse<Circuit>> => {
-        const response = await api.get<PaginatedResponse<Circuit>>('/circuits/');
+    getCircuits: async (filters?: CircuitFilters): Promise<PaginatedResponse<Circuit>> => {
+        const params: Record<string, string> = {};
+        
+        if (filters) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    params[key] = String(value);
+                }
+            });
+        }
+        
+        const response = await api.get<PaginatedResponse<Circuit>>('/circuits/', { params });
         return response.data;
     },
 
     getCircuit: async (id: string): Promise<Circuit> => {
         const response = await api.get<Circuit>(`/circuits/${id}/`);
         return response.data;
+    },
+
+    // Position operations
+    getPositions: async (filters?: PositionFilters): Promise<PaginatedResponse<Position>> => {
+        const params: Record<string, string> = {};
+        
+        if (filters) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    params[key] = String(value);
+                }
+            });
+        }
+        
+        const response = await api.get<PaginatedResponse<Position>>('/positions/', { params });
+        return response.data;
+    },
+
+    // Convenience methods for positions
+    getRaceResults: async (raceId: string): Promise<PaginatedResponse<Position>> => {
+        return racesApi.getPositions({ race_id: raceId });
+    },
+
+    getDriverResults: async (driverId: string, season?: number): Promise<PaginatedResponse<Position>> => {
+        return racesApi.getPositions({ driver_id: driverId, season });
+    },
+
+    getTeamResults: async (teamId: string, season?: number): Promise<PaginatedResponse<Position>> => {
+        return racesApi.getPositions({ team_id: teamId, season });
+    },
+
+    getRaceWinners: async (season?: number): Promise<PaginatedResponse<Position>> => {
+        return racesApi.getPositions({ position: 1, season });
     },
 
     // Like operations for races

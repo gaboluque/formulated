@@ -53,6 +53,17 @@ class APISportsClient:
         endpoint = f"/rankings/drivers?season={season}"
         return self._make_request(endpoint)
     
+    def get_races(self, season: int, race_type: str = "race") -> List[Dict[str, Any]]:
+        """Get races from the APISports F1 API"""
+        endpoint = "/races"
+        params = {
+            "season": season,
+            "type": race_type
+        }
+        return self._make_request(endpoint, params)
     
-
-    
+    def get_competitions(self, season: int) -> List[Dict[str, Any]]:
+        """Get competitions (race weekends) from the APISports F1 API"""
+        endpoint = "/competitions"
+        params = {"season": season}
+        return self._make_request(endpoint, params)

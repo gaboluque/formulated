@@ -30,8 +30,24 @@ export const RaceCard = ({ race }: RaceCardProps) => {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
-        });
+            minute: '2-digit',
+            timeZone: 'UTC'
+        }) + ' UTC';
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'scheduled':
+                return '📅';
+            case 'ongoing':
+                return '🏁';
+            case 'completed':
+                return '✅';
+            case 'cancelled':
+                return '❌';
+            default:
+                return '❓';
+        }
     };
 
     return (
@@ -42,20 +58,31 @@ export const RaceCard = ({ race }: RaceCardProps) => {
                         {race.name}
                     </h3>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(race.status)}`}>
-                        {race.status}
+                        {getStatusIcon(race.status)} {race.status.charAt(0).toUpperCase() + race.status.slice(1)}
                     </span>
                 </div>
+                {race.winner && (
+                    <div className="text-right">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Winner</div>
+                        <div className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                            🏆 {race.winner.driver_name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {race.winner.team_name} • {race.winner.points} pts
+                        </div>
+                    </div>
+                )}
             </div>
 
-            <div className="mb-4">
-                <div className="h-10 flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <div className="mb-4 h-24">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2 h-10">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     {race.circuit.name}, {race.circuit.location}
                 </div>
-                <div className="h-10 flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2 h-10">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -63,29 +90,51 @@ export const RaceCard = ({ race }: RaceCardProps) => {
                 </div>
             </div>
 
-            <p className="h-20 text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                {race.description}
-            </p>
+            {race.positions.length > 0 && (
+                <div className="mb-4">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Top 3 Results:
+                    </div>
+                    <div className="space-y-2">
+                        {race.positions.slice(0, 3).map((position) => {
+                            const podiumColor = position.position === 1 
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                : position.position === 2
+                                ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+                            
+                            const medal = position.position === 1 ? '🥇' : position.position === 2 ? '🥈' : '🥉';
 
-            <div className="h-22 mb-4">
-                <div className="block h-full">
-                    {[1, 2, 3].map((position) => {
-                        const color = position === 1 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
-                        const driver = race.positions[position - 1]?.driver;
-
-                        return (
-                            <p key={position} className={`mb-1 block items-center px-2 py-1 rounded-md text-xs font-medium ${color}`}  >
-                                P{position} {driver?.name || '?'}
-                            </p>
-                        )
-                    })}
+                            return (
+                                <div key={position.id} className={`flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium ${podiumColor}`}>
+                                    <div className="flex items-center">
+                                        <span className="mr-2">{medal}</span>
+                                        <span className="font-semibold">P{position.position}</span>
+                                        <span className="ml-2">{position.driver_name}</span>
+                                        {position.driver_number && (
+                                            <span className="ml-1 text-xs opacity-75">#{position.driver_number}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center">
+                                        <span className="text-xs mr-2">{position.team_name}</span>
+                                        <span className="font-semibold">{position.points} pts</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="flex justify-between items-center">
                 <Link to={`/races/${race.id}`}>
                     <Button variant="outline" size="sm">
                         View Details
+                    </Button>
+                </Link>
+                <Link to={`/circuits/${race.circuit.id}`}>
+                    <Button variant="outline" size="sm">
+                        View Circuit
                     </Button>
                 </Link>
             </div>

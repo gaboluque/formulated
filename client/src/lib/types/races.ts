@@ -1,25 +1,49 @@
-import type { Member } from "./teams";
+export type RaceStatus = 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+
+export type CircuitRace = {
+    url: string;
+    id: string;
+    name: string;
+    description: string;
+    start_at: string;
+    status: RaceStatus;
+    created_at: string;
+    updated_at: string;
+};
 
 export type Circuit = {
     url: string;
     id: string;
     name: string;
     location: string;
+    races: CircuitRace[];
+    races_count: number;
+    upcoming_races_count: number;
+    completed_races_count: number;
     created_at: string;
     updated_at: string;
 };
 
-export type Position = {
+export type RacePosition = {
     url: string;
     id: string;
-    race: string;
-    race_url: string;
-    driver: Member;
-    driver_url: string;
     position: number;
     points: number;
+    driver_url: string;
+    driver_name: string;
+    driver_number: string;
+    driver_acronym: string;
+    team_name: string;
+    team_url: string;
     created_at: string;
     updated_at: string;
+};
+
+export type RaceWinner = {
+    driver_name: string;
+    driver_url: string | null;
+    team_name: string;
+    points: number;
 };
 
 export type Race = {
@@ -27,11 +51,31 @@ export type Race = {
     id: string;
     name: string;
     description: string;
+    start_at: string;
+    status: RaceStatus;
+    is_finished: boolean;
     circuit: Circuit;
     circuit_url: string;
-    start_at: string;
-    status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
-    positions: Position[];
+    positions: RacePosition[];
+    positions_count: number;
+    winner: RaceWinner | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type Position = {
+    url: string;
+    id: string;
+    position: number;
+    points: number;
+    race: Race;
+    race_url: string;
+    driver_url: string;
+    driver_name: string;
+    driver_number: string;
+    driver_acronym: string;
+    team_name: string;
+    team_url: string;
     created_at: string;
     updated_at: string;
 }; 
