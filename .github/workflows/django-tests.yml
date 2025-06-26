@@ -53,10 +53,21 @@ jobs:
       run: |
         mkdir -p api/logs
 
+    - name: Check Django setup
+      working-directory: ./api
+      run: |
+        python manage.py check
+        python manage.py showmigrations
+
+    - name: Make migrations (if needed)
+      working-directory: ./api
+      run: |
+        python manage.py makemigrations --check --dry-run || python manage.py makemigrations
+
     - name: Run Django migrations
       working-directory: ./api
       run: |
-        python manage.py migrate
+        python manage.py migrate --verbosity=2
 
     - name: Run Django tests
       working-directory: ./api
