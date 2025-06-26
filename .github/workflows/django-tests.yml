@@ -14,7 +14,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD || 'postgres' }}
           POSTGRES_DB: formulated_test
         options: >-
           --health-cmd pg_isready
@@ -28,7 +28,7 @@ jobs:
       # Django settings
       DJANGO_SECRET_KEY: 'test-secret-key-for-ci'
       DEBUG: 'False'
-      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/formulated_test'
+      DATABASE_URL: "postgres://postgres:${{ secrets.POSTGRES_TEST_PASSWORD || 'postgres' }}@localhost:5432/formulated_test"
       ALLOWED_HOSTS: 'localhost,127.0.0.1'
       
       # CORS settings for tests
