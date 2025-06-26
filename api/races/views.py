@@ -70,18 +70,15 @@ class RaceViewSet(RecordMixin, viewsets.ReadOnlyModelViewSet):
         
         # Apply custom ordering: completed races first (most recent first), 
         # then non-completed races (next upcoming first)
-        # Use Case/When expressions to create a proper ordering without union
+        # Use a simpler approach with two separate orderings
         queryset = queryset.annotate(
+            # Priority: 0 for completed (show first), 1 for others
             order_priority=Case(
                 When(status=RaceStatus.COMPLETED, then=Value(0)),
                 default=Value(1),
                 output_field=IntegerField()
             )
-        ).order_by('order_priority', 
-                   Case(
-                       When(status=RaceStatus.COMPLETED, then='-start_at'),
-                       default='start_at'
-                   ))
+        ).order_by('order_priority', 'start_at')
         
         return queryset
 

@@ -12,6 +12,7 @@ help:
 	@echo "  migrate       - Run Django migrations"
 	@echo "  seed          - Seed database with initial data"
 	@echo "  createsuperuser - Create Django superuser"
+	@echo "  test          - Run all Django tests"
 
 # Build containers
 build:
@@ -47,3 +48,7 @@ seed:
 # Create Django superuser
 createsuperuser:
 	docker-compose exec api python manage.py createsuperuser
+
+# Run all Django tests
+test:
+	docker-compose exec api python manage.py test
