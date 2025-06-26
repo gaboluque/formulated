@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'formulated',
     'teams',
     'races',
-    'interactions'
+    'interactions',
+    'data_loader'
 ]
 
 MIDDLEWARE = [
@@ -187,3 +188,74 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+        'console': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+            'formatter': 'console',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'level': 'INFO',
+            'formatter': 'verbose',
+        },
+        'data_loader_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'data_loader.log',
+            'level': 'INFO',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'data_loader': {
+            'handlers': ['console', 'data_loader_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'data_loader.services.races_puller': {
+            'handlers': ['console', 'data_loader_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'data_loader.services.drivers_puller': {
+            'handlers': ['console', 'data_loader_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'data_loader.services.teams_puller': {
+            'handlers': ['console', 'data_loader_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

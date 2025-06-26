@@ -26,6 +26,7 @@ class RaceStatus(models.TextChoices):
 
 class Race(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    apisports_id = models.PositiveIntegerField(unique=True, null=True, blank=True, help_text="APISports F1 API ID")
     circuit = models.ForeignKey(Circuit, on_delete=models.CASCADE, related_name='races')
     name = models.CharField(max_length=255)
     description = models.TextField()

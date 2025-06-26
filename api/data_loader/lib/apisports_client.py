@@ -32,7 +32,7 @@ class APISportsClient:
             response = requests.get(url, headers=self.headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Successfully fetched {len(response.json())} records from {endpoint}")
-            print(response.json())
+            (response.json())
             return response.json()['response'] or []
         except requests.exceptions.RequestException as e:
             logger.error(f"Error making request to {url}: {e}")

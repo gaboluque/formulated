@@ -10,8 +10,9 @@ class TeamStatus(models.TextChoices):
 
 class Team(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    apisports_id = models.PositiveIntegerField(unique=True, null=True, blank=True, help_text="APISports F1 API ID")
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     status = models.CharField(max_length=255, choices=TeamStatus.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,10 +45,11 @@ class MemberRole(models.TextChoices):
 
 class Member(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    apisports_id = models.PositiveIntegerField(unique=True, null=True, blank=True, help_text="APISports F1 API ID")
     name = models.CharField(max_length=255, unique=True)
     role = models.CharField(max_length=255, choices=MemberRole.choices)
-    description = models.TextField()
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='members')
+    description = models.TextField(blank=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='members', null=True, blank=True)
     
     # Driver specific fields
     driver_number = models.PositiveIntegerField(unique=True, null=True, blank=True)

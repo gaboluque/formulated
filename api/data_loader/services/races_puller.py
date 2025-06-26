@@ -4,6 +4,7 @@ from typing import Dict, List, Any
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 import time
+from django.db.models import Q
 
 from races.models import Race, Circuit, RaceStatus, Position
 from teams.models import Member, Team, MemberRole
@@ -43,19 +44,12 @@ class RacesPuller:
         try:
             # Get races for the specified season
             races = self.client.get_races(season)
-            self.result['races_fetched'] = len(races)
             
-            if not races:
-                self.result['errors'].append(f"No races found for season {season}")
-                return self.result
-            
-            # Process each race
             for race_data in races:
                 try:
-                    # Small delay to prevent rate limiting
-                    time.sleep(10) # 10 seconds between requests
-                    
-                    logger.info(f"Processing race: {race_data.get('competition', {}).get('name', 'Unknown')}")
+                    race_id = race_data.get('id')
+                    race_name = race_data.get('competition', {}).get('name', 'Unknown')
+                    logger.info(f"Processing race: {race_name} (ID: {race_id})")
                     self._process_race(race_data)
                     
                 except Exception as e:
@@ -74,41 +68,30 @@ class RacesPuller:
     def _process_race(self, race_data: Dict[str, Any]) -> None:
         """Process a race from APISports F1 API"""
         
+        race_id = race_data.get('id')
+        race_name = race_data.get('competition', {}).get('name', 'Unknown Race')
+        
+        if not race_id:
+            raise Exception(f"Race {race_name} has no API ID")
+        
+        # Process race and circuit in separate transaction
         with transaction.atomic():
-            # First, ensure the circuit exists
             circuit = self._get_or_create_circuit(race_data)
             
-            # Then create or update the race
-            race_name = race_data.get('competition', {}).get('name', 'Unknown Race')
-            
-            # Check if race already exists (by name and season)
-            existing_race = Race.objects.filter(
-                name=race_name,
-                circuit=circuit,
-                start_at__year=parse_datetime(race_data['date']).year
-            ).first()
-            
-            race_params = self._race_params(race_data, circuit)
-            
+            existing_race = self._find_race(race_data)
+
             if existing_race:
-                logger.info(f"Race {race_name} already exists, updating...")
-                for key, value in race_params.items():
-                    setattr(existing_race, key, value)
-                existing_race.save()
+                logger.info(f"Race {race_name} already exists (ID: {race_id}), updating...")
+                self._update_race(existing_race, race_data, circuit)
                 self.result['races_updated'] += 1
                 race = existing_race
             else:
-                logger.info(f"Race {race_name} does not exist, creating...")
-                race = Race.objects.create(**race_params)
+                logger.info(f"Race {race_name} does not exist (ID: {race_id}), creating...")
+                race = self._create_race(race_data, circuit)
                 self.result['races_created'] += 1
-            
-            # Now process positions for this race if it has an ID
-            if race_data.get('id'):
-                try:
-                    self._process_race_positions(race, race_data['id'])
-                except Exception as e:
-                    logger.error(f"Error processing positions for race {race_name}: {e}")
-                    self.result['errors'].append(f"Error processing positions for race {race_name}: {e}")
+
+        # Process positions separately to avoid transaction conflicts
+        self._process_race_positions(race, race_id)
                 
         logger.info(f"Race {race_name} processed successfully")
     
@@ -120,32 +103,57 @@ class RacesPuller:
         location_data = competition_data.get('location', {})
         
         circuit_name = circuit_data.get('name', 'Unknown Circuit')
-        
-        # Create location string from country and city
+
         country = location_data.get('country', '')
         city = location_data.get('city', '')
         location = f"{city}, {country}".strip(', ') if city or country else 'Unknown Location'
         
-        # Check if circuit already exists
-        circuit = Circuit.objects.filter(name=circuit_name).first()
+        circuit = self._find_circuit(circuit_name, location)
         
         if circuit:
-            # Update location if it's different
-            if circuit.location != location:
-                circuit.location = location
-                circuit.save()
-                self.result['circuits_updated'] += 1
+            self._update_circuit(circuit, circuit_name, location)
+            self.result['circuits_updated'] += 1
         else:
-            # Create new circuit
-            circuit = Circuit.objects.create(
-                name=circuit_name,
-                location=location
-            )
+            circuit = self._create_circuit(circuit_name, location)
             self.result['circuits_created'] += 1
-            logger.info(f"Created new circuit: {circuit_name}")
-        
+
         return circuit
     
+    def _find_circuit(self, circuit_name: str, location: str) -> Circuit:
+        """Find a circuit from APISports F1 API"""
+        return Circuit.objects.filter(Q(name=circuit_name) | Q(location=location)).first()
+    
+    def _create_circuit(self, circuit_name: str, location: str) -> Circuit:
+        """Create a circuit from APISports F1 API"""
+        return Circuit.objects.create(name=circuit_name, location=location)
+    
+    def _update_circuit(self, circuit: Circuit, circuit_name: str, location: str) -> Circuit:
+        """Update a circuit from APISports F1 API"""
+        circuit.name = circuit_name
+        circuit.location = location
+        circuit.save()
+        return circuit
+    
+    def _find_race(self, race_data: Dict[str, Any]) -> Race:
+        """Find a race from APISports F1 API"""
+        race_id = race_data.get('id')
+        race_name = race_data.get('competition', {}).get('name', 'Unknown Race')
+        circuit = self._find_circuit(race_data.get('circuit', {}).get('name', 'Unknown Circuit'), race_data.get('circuit', {}).get('location', {}).get('name', 'Unknown Location'))
+
+        return Race.objects.filter(Q(apisports_id=race_id) | Q(name=race_name) | Q(circuit=circuit)).first()
+    
+    def _create_race(self, race_data: Dict[str, Any], circuit: Circuit) -> Race:
+        """Create a race from APISports F1 API"""
+        return Race.objects.create(**self._race_params(race_data, circuit))
+    
+    def _update_race(self, race: Race, race_data: Dict[str, Any], circuit: Circuit) -> Race:
+        """Update a race from APISports F1 API"""
+        race_params = self._race_params(race_data, circuit)
+        for key, value in race_params.items():
+            setattr(race, key, value)
+        race.save()
+        return race
+
     def _race_params(self, race_data: Dict[str, Any], circuit: Circuit) -> Dict[str, Any]:
         """Get race parameters from APISports F1 API data"""
         
@@ -187,6 +195,7 @@ class RacesPuller:
         description = " | ".join(description_parts) if description_parts else "Formula 1 Race"
         
         return {
+            'apisports_id': race_data['id'],
             'circuit': circuit,
             'name': competition_data.get('name', 'Unknown Race'),
             'description': description,
@@ -200,7 +209,7 @@ class RacesPuller:
         logger.info(f"Fetching positions for race: {race.name}")
         
         # Add delay before fetching positions
-        time.sleep(1)
+        time.sleep(10)
         
         try:
             positions_data = self.client.get_race_rankings(race_id)
@@ -226,14 +235,13 @@ class RacesPuller:
     def _process_position(self, race: Race, position_data: Dict[str, Any]) -> None:
         """Process a single position entry"""
         
-        # Find the driver (don't create new ones)
         driver = self._find_driver(position_data)
         
         if not driver:
             driver_data = position_data.get('driver', {})
             driver_name = driver_data.get('name', 'Unknown')
-            driver_abbr = driver_data.get('abbr', 'Unknown')
-            logger.warning(f"Could not find existing driver: {driver_name} ({driver_abbr})")
+            driver_id = driver_data.get('id', 'Unknown')
+            logger.warning(f"Could not find existing driver: {driver_name} (ID: {driver_id})")
             return
         
         position_num = position_data.get('position')
@@ -241,66 +249,57 @@ class RacesPuller:
             logger.warning(f"Position number missing for driver {driver.name}")
             return
         
-        # Check if position already exists
-        existing_position = Position.objects.filter(
-            race=race,
-            position=position_num
-        ).first()
-        
-        position_params = self._position_params(race, driver, position_data)
-        
-        if existing_position:
-            logger.info(f"Position {position_num} already exists for race {race.name}, updating...")
-            for key, value in position_params.items():
-                setattr(existing_position, key, value)
-            existing_position.save()
-            self.result['positions_updated'] += 1
-        else:
-            logger.info(f"Creating position {position_num} for {driver.name} in race {race.name}")
-            Position.objects.create(**position_params)
-            self.result['positions_created'] += 1
+        # Use individual transaction for each position to avoid transaction conflicts
+        try:
+            with transaction.atomic():
+                existing_position = self._find_position(race, driver)
+                
+                if existing_position:
+                    logger.info(f"Position {position_num} already exists for race {race.name}, updating...")
+                    self._update_position(existing_position, race, driver, position_data)
+                    self.result['positions_updated'] += 1
+                else:
+                    logger.info(f"Creating position {position_num} for {driver.name} in race {race.name}")
+                    self._create_position(race, driver, position_data)
+                    self.result['positions_created'] += 1
+        except Exception as e:
+            logger.error(f"Error saving position {position_num} for {driver.name} in race {race.name}: {e}")
+            raise
     
     def _find_driver(self, position_data: Dict[str, Any]) -> Member:
         """Find an existing driver from position data"""
         
         driver_data = position_data.get('driver', {})
         
+        driver_id = driver_data.get('id')
         driver_name = driver_data.get('name', '')
         driver_abbr = driver_data.get('abbr', '')
         driver_number = driver_data.get('number')
         
-        # First try to find by abbreviation (most reliable)
-        if driver_abbr:
-            driver = Member.objects.filter(
-                name_acronym=driver_abbr,
-                role=MemberRole.DRIVER
-            ).first()
-            if driver:
-                logger.debug(f"Found driver by abbreviation: {driver.name} ({driver_abbr})")
-                return driver
-        
-        # Fallback to driver number if available
-        if driver_number:
-            driver = Member.objects.filter(
-                driver_number=driver_number,
-                role=MemberRole.DRIVER
-            ).first()
-            if driver:
-                logger.debug(f"Found driver by number: {driver.name} (#{driver_number})")
-                return driver
-        
-        # Last fallback to name (least reliable due to variations)
-        if driver_name:
-            driver = Member.objects.filter(
-                name__icontains=driver_name,
-                role=MemberRole.DRIVER
-            ).first()
-            if driver:
-                logger.debug(f"Found driver by name: {driver.name}")
-                return driver
-        
-        # No driver found
-        return None
+        driver = Member.objects.filter(
+            Q(apisports_id=driver_id) |
+            Q(name=driver_name) |
+            Q(driver_number=driver_number) |
+            Q(name_acronym=driver_abbr)
+        ).first()
+
+        return driver
+    
+    def _find_position(self, race: Race, driver: Member) -> Position:
+        """Find a position from APISports F1 API"""
+        return Position.objects.filter(race=race, driver=driver).first()
+    
+    def _create_position(self, race: Race, driver: Member, position_data: Dict[str, Any]) -> Position:
+        """Create a position from APISports F1 API"""
+        return Position.objects.create(**self._position_params(race, driver, position_data))
+    
+    def _update_position(self, position: Position, race: Race, driver: Member, position_data: Dict[str, Any]) -> Position:
+        """Update a position from APISports F1 API"""
+        position_params = self._position_params(race, driver, position_data)
+        for key, value in position_params.items():
+            setattr(position, key, value)
+        position.save()
+        return position
     
     def _position_params(self, race: Race, driver: Member, position_data: Dict[str, Any]) -> Dict[str, Any]:
         """Get position parameters from API data"""
