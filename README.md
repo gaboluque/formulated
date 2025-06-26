@@ -211,6 +211,8 @@ docker-compose exec api python manage.py showmigrations
 ## 🧪 Testing
 
 ### Backend Tests
+
+#### Using Docker (Recommended)
 ```bash
 # Run all tests
 docker-compose exec api python manage.py test
@@ -223,6 +225,21 @@ docker-compose exec api python manage.py test interactions
 # Run with coverage
 docker-compose exec api coverage run --source='.' manage.py test
 docker-compose exec api coverage report
+```
+
+#### Using Local Test Script
+```bash
+# Run all tests locally (without Docker)
+./scripts/run-tests.sh
+
+# Run with verbose output
+./scripts/run-tests.sh --verbose
+
+# Run with coverage report
+./scripts/run-tests.sh --coverage
+
+# Run tests for specific app
+./scripts/run-tests.sh --app teams
 ```
 
 ### Frontend Development
